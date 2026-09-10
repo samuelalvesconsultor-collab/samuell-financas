@@ -1,0 +1,14 @@
+{
+  "name": "samuell-financas-server",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node --watch src/../index.js",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.12.0"
+  }
+}
