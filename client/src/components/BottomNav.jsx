@@ -10,7 +10,7 @@ const DashIcon = () => (
 )
 const ArrowsIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/>
+    <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
   </svg>
 )
 const ListIcon = () => (
@@ -33,7 +33,7 @@ const TagIcon = () => (
 
 const links = [
   { to: '/',            label: 'Dashboard',   Icon: DashIcon   },
-  { to: '/lancamentos', label: 'Lançamentos', Icon: ArrowsIcon },
+  { to: '/lancamentos', label: 'Entradas',    Icon: ArrowsIcon },
   { to: '/contas',      label: 'Contas',      Icon: ListIcon   },
   { to: '/dividas',     label: 'Dívidas',     Icon: CardIcon   },
   { to: '/categorias',  label: 'Categorias',  Icon: TagIcon    },
