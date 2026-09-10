@@ -1,15 +1,17 @@
-const styles = {
-  pago:     'bg-teal-900/30 text-teal-400 border border-teal-700/40',
-  paga:     'bg-teal-900/30 text-teal-400 border border-teal-700/40',
-  pendente: 'bg-yellow-900/30 text-yellow-400 border border-yellow-700/40',
-  atrasada: 'bg-red-900/30 text-red-400 border border-red-700/40',
-  atrasado: 'bg-red-900/30 text-red-400 border border-red-700/40',
+const CONFIG = {
+  pago:     { dot: 'bg-teal-500',   label: 'Pago' },
+  paga:     { dot: 'bg-teal-500',   label: 'Paga' },
+  pendente: { dot: 'bg-yellow-500', label: 'Pendente' },
+  atrasada: { dot: 'bg-red-500',    label: 'Atrasada' },
+  atrasado: { dot: 'bg-red-500',    label: 'Atrasado' },
 }
 
 export default function StatusBadge({ status }) {
+  const cfg = CONFIG[status] || { dot: 'bg-gray-500', label: status }
   return (
-    <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${styles[status] || 'bg-gray-800 text-gray-400 border border-gray-700'}`}>
-      {status}
+    <span className="flex items-center gap-1.5 text-xs text-gray-400 whitespace-nowrap">
+      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
+      {cfg.label}
     </span>
   )
 }

@@ -11,7 +11,7 @@ export default function App() {
   return (
     <AppProvider>
       <BrowserRouter>
-        <div className="flex min-h-screen bg-surface">
+        <div className="flex min-h-screen" style={{ background: '#121212' }}>
           <Nav />
           <main className="flex-1 md:ml-52 pb-16 md:pb-0 overflow-x-hidden">
             <Routes>

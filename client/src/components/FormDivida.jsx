@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
 
 const VAZIO = {
@@ -11,6 +11,23 @@ export default function FormDivida({ inicial, onSalvar, onCancelar }) {
   const { categorias } = useApp()
   const [form, setForm] = useState(inicial || VAZIO)
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  // Calcula valor_parcela em tempo real quando valor_total ou num_parcelas mudam
+  useEffect(() => {
+    if (!inicial && form.valor_total && form.num_parcelas > 0) {
+      const vp = (parseFloat(form.valor_total) / parseInt(form.num_parcelas)).toFixed(2)
+      setForm(f => ({ ...f, valor_parcela: vp }))
+    }
+  }, [form.valor_total, form.num_parcelas])
+
+  // Calcula data_termino em tempo real quando data_inicio ou num_parcelas mudam
+  useEffect(() => {
+    if (!inicial && form.data_inicio && form.num_parcelas > 0) {
+      const d = new Date(form.data_inicio + 'T12:00:00Z')
+      d.setUTCMonth(d.getUTCMonth() + parseInt(form.num_parcelas) - 1)
+      setForm(f => ({ ...f, data_termino: d.toISOString().split('T')[0] }))
+    }
+  }, [form.data_inicio, form.num_parcelas])
 
   function submit(e) {
     e.preventDefault()
@@ -39,24 +56,35 @@ export default function FormDivida({ inicial, onSalvar, onCancelar }) {
       </select>
 
       <div className="grid grid-cols-2 gap-2">
-        <input required type="number" step="0.01" placeholder="Valor total" value={form.valor_total}
-          onChange={e => set('valor_total', e.target.value)} className="input-dark" />
-        <input required type="number" step="0.01" placeholder="Valor parcela" value={form.valor_parcela}
+        <div>
+          <label className="text-[10px] text-gray-600 uppercase tracking-widest mb-1 block">Valor Total</label>
+          <input required type="number" step="0.01" placeholder="0,00" value={form.valor_total}
+            onChange={e => set('valor_total', e.target.value)} className="input-dark" />
+        </div>
+        <div>
+          <label className="text-[10px] text-gray-600 uppercase tracking-widest mb-1 block">Nº Parcelas</label>
+          <input required type="number" min="1" placeholder="12" value={form.num_parcelas}
+            onChange={e => set('num_parcelas', e.target.value)} className="input-dark" />
+        </div>
+      </div>
+
+      <div>
+        <label className="text-[10px] text-gray-600 uppercase tracking-widest mb-1 block">Valor da Parcela (calculado)</label>
+        <input required type="number" step="0.01" placeholder="0,00" value={form.valor_parcela}
           onChange={e => set('valor_parcela', e.target.value)} className="input-dark" />
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <input required type="number" placeholder="Nº parcelas" value={form.num_parcelas}
-          onChange={e => set('num_parcelas', e.target.value)} className="input-dark" />
-        <input type="number" placeholder="Pagas" value={form.parcelas_pagas}
-          onChange={e => set('parcelas_pagas', e.target.value)} className="input-dark" />
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <input required type="date" value={form.data_inicio}
-          onChange={e => set('data_inicio', e.target.value)} className="input-dark" />
-        <input required type="date" value={form.data_termino}
-          onChange={e => set('data_termino', e.target.value)} className="input-dark" />
+        <div>
+          <label className="text-[10px] text-gray-600 uppercase tracking-widest mb-1 block">1ª Parcela</label>
+          <input required type="date" value={form.data_inicio}
+            onChange={e => set('data_inicio', e.target.value)} className="input-dark" />
+        </div>
+        <div>
+          <label className="text-[10px] text-gray-600 uppercase tracking-widest mb-1 block">Término (calculado)</label>
+          <input required type="date" value={form.data_termino}
+            onChange={e => set('data_termino', e.target.value)} className="input-dark" />
+        </div>
       </div>
 
       <select value={form.categoria_id} onChange={e => set('categoria_id', e.target.value)} className="select-dark">

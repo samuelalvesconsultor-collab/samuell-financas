@@ -4,7 +4,16 @@ import { getLancamentos, criarLancamento, atualizarLancamento, deletarLancamento
 import Modal from '../components/Modal'
 import FormLancamento from '../components/FormLancamento'
 import StatusBadge from '../components/StatusBadge'
+import CategoryBadge from '../components/CategoryBadge'
 import MonthPicker from '../components/MonthPicker'
+import PageHeader from '../components/PageHeader'
+
+const BRL = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+const fmtDate = s => {
+  const d = new Date(s)
+  d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
+  return d.toLocaleDateString('pt-BR')
+}
 
 export default function Lancamentos() {
   const { mesSelecionado } = useApp()
@@ -14,19 +23,17 @@ export default function Lancamentos() {
   const [filtroStatus, setFiltroStatus] = useState('')
 
   const carregar = () => {
-    const params = { mes: mesSelecionado }
-    if (filtroTipo) params.tipo = filtroTipo
-    if (filtroStatus) params.status = filtroStatus
-    getLancamentos(params).then(setLista)
+    const p = { mes: mesSelecionado }
+    if (filtroTipo) p.tipo = filtroTipo
+    if (filtroStatus) p.status = filtroStatus
+    getLancamentos(p).then(setLista)
   }
-
   useEffect(() => { carregar() }, [mesSelecionado, filtroTipo, filtroStatus])
 
   async function salvar(dados) {
     if (modal === 'novo') await criarLancamento(dados)
     else await atualizarLancamento(modal.id, dados)
-    setModal(null)
-    carregar()
+    setModal(null); carregar()
   }
 
   async function excluir(id) {
@@ -36,82 +43,82 @@ export default function Lancamentos() {
   }
 
   function exportarCSV() {
-    const linhas = [
-      ['Data', 'Descrição', 'Tipo', 'Categoria', 'Status', 'Valor'],
-      ...lista.map(l => [
-        new Date(l.data).toLocaleDateString('pt-BR'),
-        l.descricao, l.tipo, l.categoria_nome || '', l.status,
-        Number(l.valor).toFixed(2).replace('.', ','),
-      ]),
-    ]
-    const csv = linhas.map(r => r.map(v => `"${v}"`).join(';')).join('\n')
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
+    const rows = [['Data','Descrição','Tipo','Categoria','Status','Valor'],
+      ...lista.map(l => [fmtDate(l.data), l.descricao, l.tipo, l.categoria_nome||'', l.status, Number(l.valor).toFixed(2).replace('.',',')])]
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(';')).join('\n')
     const a = document.createElement('a')
-    a.href = url; a.download = `lancamentos-${mesSelecionado}.csv`; a.click()
-    URL.revokeObjectURL(url)
+    a.href = URL.createObjectURL(new Blob(['﻿'+csv], { type: 'text/csv;charset=utf-8;' }))
+    a.download = `lancamentos-${mesSelecionado}.csv`; a.click()
   }
 
   const total = lista.reduce((s, l) => s + (l.tipo === 'entrada' ? +l.valor : -l.valor), 0)
 
   return (
-    <div className="p-4 space-y-4 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between pt-4">
-        <h1 className="font-display text-sm tracking-widest text-gray-200 uppercase">Lançamentos</h1>
+    <div className="min-h-screen" style={{ background: '#121212' }}>
+      <PageHeader titulo="Lançamentos">
         <MonthPicker />
-      </div>
+        <button onClick={exportarCSV} className="btn-outline">Exportar CSV</button>
+        <button onClick={() => setModal('novo')} className="btn-action">
+          <span className="text-lg leading-none">+</span> Novo
+        </button>
+      </PageHeader>
 
-      <div className="flex gap-2">
-        <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} className="select-dark flex-1">
-          <option value="">Todos</option>
-          <option value="entrada">Entradas</option>
-          <option value="saida">Saídas</option>
+      {/* Filtros */}
+      <div className="px-6 py-3 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+        <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} className="select-dark !w-auto">
+          <option value="">Todos os tipos</option>
+          <option value="entrada">Entrada</option>
+          <option value="saida">Saída</option>
         </select>
-        <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} className="select-dark flex-1">
+        <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} className="select-dark !w-auto">
           <option value="">Qualquer status</option>
           <option value="pago">Pago</option>
           <option value="pendente">Pendente</option>
         </select>
-      </div>
-
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-muted">
+        <span className="text-xs text-gray-600 ml-auto">
           Saldo:{' '}
           <span className={`font-semibold tabular-nums ${total >= 0 ? 'text-teal-400' : 'text-red-400'}`}>
-            {total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            {BRL(total)}
           </span>
-        </p>
-        <button onClick={exportarCSV} className="text-xs text-accent border border-accent/30 rounded-lg px-3 py-1 hover:bg-accent/10 transition-colors">
-          Exportar CSV
-        </button>
+        </span>
       </div>
 
-      <div className="space-y-2">
-        {lista.map(l => (
-          <div key={l.id} className="card-dark p-3 flex justify-between items-start">
-            <div>
-              <p className="font-medium text-gray-100 text-sm">{l.descricao}</p>
-              <p className="text-xs text-muted mt-0.5">{new Date(l.data).toLocaleDateString('pt-BR')} · {l.categoria_nome || '—'}</p>
-            </div>
-            <div className="flex flex-col items-end gap-1.5">
-              <span className={`font-semibold text-sm tabular-nums ${l.tipo === 'entrada' ? 'text-teal-400' : 'text-red-400'}`}>
-                {l.tipo === 'entrada' ? '+' : '-'}{Number(l.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </span>
-              <StatusBadge status={l.status} />
-              <div className="flex gap-3 mt-0.5">
-                <button onClick={() => setModal(l)} className="text-xs text-gray-400 hover:text-gray-100">Editar</button>
-                <button onClick={() => excluir(l.id)} className="text-xs text-red-500 hover:text-red-400">Excluir</button>
-              </div>
-            </div>
-          </div>
-        ))}
-        {!lista.length && <p className="text-center text-muted text-sm py-10">Nenhum lançamento no período.</p>}
+      {/* Tabela */}
+      <div className="overflow-x-auto">
+        {!lista.length ? (
+          <div className="text-center py-16 text-gray-600 text-sm">Nenhum lançamento no período.</div>
+        ) : (
+          <table className="w-full text-sm min-w-[600px]">
+            <thead>
+              <tr>
+                <th className="th">Data</th>
+                <th className="th">Descrição</th>
+                <th className="th">Categoria</th>
+                <th className="th">Status</th>
+                <th className="th text-right">Valor</th>
+                <th className="th" />
+              </tr>
+            </thead>
+            <tbody>
+              {lista.map(l => (
+                <tr key={l.id} className="table-row">
+                  <td className="td text-gray-500 tabular-nums">{fmtDate(l.data)}</td>
+                  <td className="td text-white font-medium">{l.descricao}</td>
+                  <td className="td"><CategoryBadge nome={l.categoria_nome} /></td>
+                  <td className="td"><StatusBadge status={l.status} /></td>
+                  <td className={`td text-right font-semibold tabular-nums ${l.tipo === 'entrada' ? 'text-teal-400' : 'text-red-400'}`}>
+                    {l.tipo === 'entrada' ? '+' : '-'}{BRL(l.valor)}
+                  </td>
+                  <td className="td text-right whitespace-nowrap">
+                    <button onClick={() => setModal(l)} className="text-gray-600 hover:text-gray-300 mr-4 text-xs transition-colors">Editar</button>
+                    <button onClick={() => excluir(l.id)} className="text-gray-600 hover:text-red-400 text-xs transition-colors">Excluir</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
-
-      <button onClick={() => setModal('novo')}
-        className="fixed bottom-20 md:bottom-6 right-4 w-12 h-12 bg-accent hover:bg-red-700 text-white rounded-full text-2xl shadow-lg flex items-center justify-center transition-colors">
-        +
-      </button>
 
       {modal && (
         <Modal titulo={modal === 'novo' ? 'NOVO LANÇAMENTO' : 'EDITAR LANÇAMENTO'} onClose={() => setModal(null)}>

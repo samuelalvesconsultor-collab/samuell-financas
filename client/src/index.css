@@ -2,26 +2,87 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg:           #0d0d0d;
+  --surface:      #121212;
+  --card:         #1a1a1a;
+  --card-alt:     #1e1e1e;
+  --card-border:  rgba(255,255,255,0.06);
+  --accent:       #dc2626;
+  --accent-bg:    rgba(220,38,38,0.12);
+  --accent-border:rgba(220,38,38,0.25);
+  --tpetrol:      #0d9488;
+  --text:         #ffffff;
+  --text-2:       #d1d5db;
+  --text-muted:   #9ca3af;
+  --text-faint:   #6b7280;
+}
+
 @layer base {
   body {
-    @apply bg-surface text-gray-100 font-sans antialiased;
+    background-color: var(--surface);
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
 @layer components {
   .input-dark {
-    @apply w-full bg-surface border border-rim rounded-lg px-3 py-2 text-sm text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 transition-colors;
+    @apply w-full rounded-lg px-3 py-2 text-sm text-white focus:outline-none transition-colors;
+    background-color: var(--card);
+    border: 1px solid var(--card-border);
   }
+  .input-dark::placeholder { color: var(--text-faint); }
+  .input-dark:focus { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(220,38,38,0.2); }
+
   .select-dark {
-    @apply w-full bg-surface border border-rim rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-accent transition-colors;
+    @apply w-full rounded-lg px-3 py-2 text-sm text-white focus:outline-none transition-colors;
+    background-color: var(--card);
+    border: 1px solid var(--card-border);
   }
+  .select-dark:focus { border-color: var(--accent); }
+
   .card-dark {
-    @apply bg-card border border-rim rounded-xl;
+    @apply rounded-xl;
+    background-color: var(--card);
+    border: 1px solid var(--card-border);
   }
+
   .btn-primary {
-    @apply flex-1 bg-accent hover:bg-red-700 text-white rounded-lg py-2 text-sm font-medium transition-colors;
+    @apply flex-1 text-white rounded-lg py-2 text-sm font-medium transition-colors;
+    background-color: var(--accent);
   }
+  .btn-primary:hover { background-color: #b91c1c; }
+
   .btn-ghost {
-    @apply flex-1 border border-rim text-gray-400 hover:text-gray-200 rounded-lg py-2 text-sm transition-colors;
+    @apply flex-1 text-gray-400 hover:text-gray-200 rounded-lg py-2 text-sm transition-colors;
+    border: 1px solid var(--card-border);
   }
+
+  .btn-action {
+    @apply flex items-center gap-1.5 text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors;
+    background-color: var(--accent);
+  }
+  .btn-action:hover { background-color: #b91c1c; }
+
+  .btn-outline {
+    @apply flex items-center gap-1.5 text-gray-400 hover:text-gray-200 text-sm rounded-lg px-3 py-2 transition-colors;
+    border: 1px solid var(--card-border);
+  }
+
+  .page-header {
+    @apply flex items-center justify-between px-6 py-4 sticky top-0 z-10;
+    background-color: var(--surface);
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .table-row {
+    @apply transition-colors;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .table-row:hover { background-color: rgba(255,255,255,0.02); }
+
+  .th { @apply text-left py-3 px-4 text-[10px] font-semibold uppercase tracking-widest text-gray-600; }
+  .td { @apply py-3.5 px-4; }
 }
