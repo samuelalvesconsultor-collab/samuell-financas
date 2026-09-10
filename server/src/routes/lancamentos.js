@@ -9,13 +9,13 @@ router.get('/', async (req, res) => {
   let i = 1
 
   if (mes) {
-    conditions.push(`DATE_TRUNC('month', data) = DATE_TRUNC('month', $${i}::date)`)
+    conditions.push(`DATE_TRUNC('month', l.data) = DATE_TRUNC('month', $${i}::date)`)
     params.push(`${mes}-01`)
     i++
   }
-  if (categoria) { conditions.push(`categoria_id = $${i++}`); params.push(categoria) }
-  if (status) { conditions.push(`status = $${i++}`); params.push(status) }
-  if (tipo) { conditions.push(`tipo = $${i++}`); params.push(tipo) }
+  if (categoria) { conditions.push(`l.categoria_id = $${i++}`); params.push(categoria) }
+  if (status)    { conditions.push(`l.status = $${i++}`); params.push(status) }
+  if (tipo)      { conditions.push(`l.tipo = $${i++}`); params.push(tipo) }
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
   const { rows } = await pool.query(
