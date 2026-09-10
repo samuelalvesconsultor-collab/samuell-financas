@@ -3,7 +3,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans:    ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans:    ['Arial', 'Helvetica', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         display: ['Orbitron', 'sans-serif'],
       },
     },
