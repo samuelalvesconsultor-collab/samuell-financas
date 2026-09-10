@@ -1,13 +1,13 @@
 export default function SaldoCard({ label, valor, cor }) {
   const cores = {
-    verde:    'bg-green-50 border-green-200 text-green-700',
-    vermelho: 'bg-red-50 border-red-200 text-red-700',
-    azul:     'bg-blue-50 border-blue-200 text-blue-700',
+    verde:    'bg-tpetrol/10 border-tpetrol/30 text-teal-400 shadow-[0_0_20px_rgba(13,148,136,0.08)]',
+    vermelho: 'bg-accent/10 border-accent/30 text-red-400 shadow-[0_0_20px_rgba(220,38,38,0.08)]',
+    azul:     'bg-slate-800/60 border-slate-600/40 text-slate-300',
   }
   return (
     <div className={`rounded-xl border p-4 flex flex-col gap-1 ${cores[cor] || cores.azul}`}>
-      <span className="text-xs uppercase tracking-wide opacity-70">{label}</span>
-      <span className="text-2xl font-bold">
+      <span className="text-xs uppercase tracking-widest opacity-60 font-medium">{label}</span>
+      <span className="text-xl font-bold tabular-nums">
         {Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
       </span>
     </div>

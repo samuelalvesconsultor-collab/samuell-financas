@@ -16,13 +16,13 @@ export default function MonthPicker() {
   }
 
   const [ano, mes] = mesSelecionado.split('-').map(Number)
-  const label = new Date(ano, mes - 1).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })
+  const label = new Date(ano, mes - 1).toLocaleString('pt-BR', { month: 'short', year: 'numeric' })
 
   return (
-    <div className="flex items-center gap-3">
-      <button onClick={anterior} className="text-blue-700 font-bold text-lg px-2">‹</button>
-      <span className="capitalize font-semibold text-gray-700">{label}</span>
-      <button onClick={proximo} className="text-blue-700 font-bold text-lg px-2">›</button>
+    <div className="flex items-center gap-1">
+      <button onClick={anterior} className="text-accent hover:text-red-400 font-bold text-lg w-7 h-7 flex items-center justify-center">‹</button>
+      <span className="font-display text-[10px] tracking-widest text-gray-300 capitalize min-w-[90px] text-center">{label}</span>
+      <button onClick={proximo} className="text-accent hover:text-red-400 font-bold text-lg w-7 h-7 flex items-center justify-center">›</button>
     </div>
   )
 }

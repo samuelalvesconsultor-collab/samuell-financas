@@ -14,10 +14,8 @@ export default function Categorias() {
 
   const carregar = async () => {
     if (mostrarArquivadas) {
-      // Busca ativas e arquivadas separadamente e combina
       const [ativas, arquivadas] = await Promise.all([getCategorias(false), getCategorias(true)])
-      const data = [...ativas, ...arquivadas]
-      setLista(data)
+      setLista([...ativas, ...arquivadas])
       setCategorias(ativas)
     } else {
       const data = await getCategorias(false)
@@ -29,11 +27,8 @@ export default function Categorias() {
   useEffect(() => { carregar() }, [mostrarArquivadas])
 
   async function salvar(dados) {
-    if (modal === 'novo') {
-      await criarCategoria(dados)
-    } else {
-      await atualizarCategoria(modal.id, dados)
-    }
+    if (modal === 'novo') await criarCategoria(dados)
+    else await atualizarCategoria(modal.id, dados)
     setModal(null)
     carregar()
   }
@@ -47,47 +42,50 @@ export default function Categorias() {
   const arquivadas = lista.filter(c => c.arquivada)
 
   return (
-    <div className="p-4 space-y-4 max-w-lg mx-auto">
-      <div className="flex items-center justify-between pt-2">
-        <h1 className="text-xl font-bold text-gray-800">Categorias</h1>
-        <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer">
-          <input type="checkbox" checked={mostrarArquivadas} onChange={e => setMostrarArquivadas(e.target.checked)} />
-          Mostrar arquivadas
+    <div className="p-4 space-y-4 max-w-2xl mx-auto">
+      <div className="flex items-center justify-between pt-4">
+        <h1 className="font-display text-sm tracking-widest text-gray-200 uppercase">Categorias</h1>
+        <label className="flex items-center gap-2 text-xs text-muted cursor-pointer select-none">
+          <input type="checkbox" checked={mostrarArquivadas} onChange={e => setMostrarArquivadas(e.target.checked)}
+            className="accent-accent" />
+          Arquivadas
         </label>
       </div>
 
       <div className="space-y-2">
         {ativas.map(c => (
-          <div key={c.id} className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex justify-between items-center">
+          <div key={c.id} className="card-dark px-4 py-3 flex justify-between items-center">
             <div>
-              <p className="font-medium text-gray-800 text-sm">{c.nome}</p>
-              <p className="text-xs text-gray-400">{TIPO_LABEL[c.tipo]}{c.padrao ? ' · Padrão' : ''}</p>
+              <p className="font-medium text-gray-100 text-sm">{c.nome}</p>
+              <p className="text-xs text-muted mt-0.5">{TIPO_LABEL[c.tipo]}{c.padrao ? ' · Padrão' : ''}</p>
             </div>
-            <div className="flex gap-3">
-              <button onClick={() => setModal(c)} className="text-xs text-blue-600">Editar</button>
-              <button onClick={() => toggleArquivar(c.id)} className="text-xs text-yellow-600">Arquivar</button>
+            <div className="flex gap-4">
+              <button onClick={() => setModal(c)} className="text-xs text-gray-400 hover:text-gray-100">Editar</button>
+              <button onClick={() => toggleArquivar(c.id)} className="text-xs text-yellow-500 hover:text-yellow-400">Arquivar</button>
             </div>
           </div>
         ))}
 
         {mostrarArquivadas && arquivadas.map(c => (
-          <div key={c.id} className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 flex justify-between items-center opacity-60">
+          <div key={c.id} className="bg-surface border border-rim/50 rounded-xl px-4 py-3 flex justify-between items-center opacity-50">
             <div>
-              <p className="font-medium text-gray-600 text-sm line-through">{c.nome}</p>
-              <p className="text-xs text-gray-400">{TIPO_LABEL[c.tipo]}</p>
+              <p className="font-medium text-gray-500 text-sm line-through">{c.nome}</p>
+              <p className="text-xs text-muted">{TIPO_LABEL[c.tipo]}</p>
             </div>
-            <button onClick={() => toggleArquivar(c.id)} className="text-xs text-green-600">Restaurar</button>
+            <button onClick={() => toggleArquivar(c.id)} className="text-xs text-teal-500 hover:text-teal-400">Restaurar</button>
           </div>
         ))}
 
-        {!lista.length && <p className="text-center text-gray-400 text-sm py-8">Nenhuma categoria encontrada.</p>}
+        {!lista.length && <p className="text-center text-muted text-sm py-10">Nenhuma categoria encontrada.</p>}
       </div>
 
       <button onClick={() => setModal('novo')}
-        className="fixed bottom-20 right-4 w-12 h-12 bg-blue-700 text-white rounded-full text-2xl shadow-lg flex items-center justify-center">+</button>
+        className="fixed bottom-20 md:bottom-6 right-4 w-12 h-12 bg-accent hover:bg-red-700 text-white rounded-full text-2xl shadow-lg flex items-center justify-center transition-colors">
+        +
+      </button>
 
       {modal && (
-        <Modal titulo={modal === 'novo' ? 'Nova Categoria' : 'Editar Categoria'} onClose={() => setModal(null)}>
+        <Modal titulo={modal === 'novo' ? 'NOVA CATEGORIA' : 'EDITAR CATEGORIA'} onClose={() => setModal(null)}>
           <FormCategoria inicial={modal !== 'novo' ? modal : undefined} onSalvar={salvar} onCancelar={() => setModal(null)} />
         </Modal>
       )}
