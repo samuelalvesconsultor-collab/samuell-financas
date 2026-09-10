@@ -12,6 +12,7 @@ app.use('/api/lancamentos', require('./src/routes/lancamentos'))
 app.use('/api/contas', require('./src/routes/contas'))
 app.use('/api/dividas', require('./src/routes/dividas'))
 app.use('/api/dashboard', require('./src/routes/dashboard'))
+app.use('/api/parcelas', require('./src/routes/parcelas'))
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
