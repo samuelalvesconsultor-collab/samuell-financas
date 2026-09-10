@@ -3,11 +3,12 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
-    "db:up": "docker compose up -d",
-    "db:down": "docker compose down",
+    "db:up": "export PATH=\"$PATH:/Applications/Docker.app/Contents/Resources/bin\" && docker compose up -d",
+    "db:down": "export PATH=\"$PATH:/Applications/Docker.app/Contents/Resources/bin\" && docker compose down",
     "db:migrate": "node server/src/db/migrate.js",
     "db:seed": "node server/src/db/seed.js",
-    "setup": "npm run db:up && node -e \"setTimeout(()=>{},4000)\" && npm run db:migrate && npm run db:seed"
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "setup": "npm run install:all && npm run db:up && sleep 4 && npm run db:migrate && npm run db:seed"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
