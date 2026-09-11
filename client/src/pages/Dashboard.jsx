@@ -227,7 +227,7 @@ export default function Dashboard() {
             {dados.contas_proximas.length > 0 && (
               <div className="rounded-xl p-4"
                 style={{ background: 'rgba(234,179,8,0.05)', border: '1px solid rgba(234,179,8,0.18)' }}>
-                <h2 className="text-[10px] font-bold tracking-widest text-yellow-400 uppercase mb-3">Vencendo em Breve</h2>
+                <h2 className="text-[10px] font-bold tracking-widest text-yellow-400 uppercase mb-3">Contas em Aberto</h2>
                 <div className="space-y-0.5">
                   {dados.contas_proximas.map(c => (
                     <div key={c.id} className="flex items-center gap-3 py-2.5"

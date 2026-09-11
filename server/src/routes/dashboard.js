@@ -31,14 +31,13 @@ router.get('/', async (req, res) => {
        AND status IN ('pendente', 'atrasada') AND recorrente = false`,
       [mesDate]
     ),
-    // Contas vencendo nos próximos 7 dias (exclui templates)
+    // Todas as contas pendentes/em aberto do mês (exclui templates)
     pool.query(
       `SELECT c.*, cat.nome as categoria_nome FROM contas c
        LEFT JOIN categorias cat ON c.categoria_id = cat.id
        WHERE DATE_TRUNC('month', mes_referencia) = DATE_TRUNC('month', $1::date)
        AND status='pendente' AND c.recorrente = false
-       AND (MAKE_DATE(EXTRACT(YEAR FROM mes_referencia)::int, EXTRACT(MONTH FROM mes_referencia)::int, dia_vencimento))
-           BETWEEN CURRENT_DATE AND CURRENT_DATE + 7`,
+       ORDER BY dia_vencimento ASC`,
       [mesDate]
     ),
     // Contas atrasadas (exclui templates)
