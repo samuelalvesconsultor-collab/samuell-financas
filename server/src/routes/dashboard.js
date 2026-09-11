@@ -7,40 +7,31 @@ router.get('/', async (req, res) => {
   const mesDate = `${mes}-01`
 
   const [
-    entradas, saidas,
-    contasPagas, contasPendentes,
-    parcelasMes,
+    entradas, contasPagas, contasPendentes,
     contasProximas, contasAtrasadas,
-    gastosCat,
+    historicoEntradas, historicoSaidas,
   ] = await Promise.all([
+    // Entradas do mês (lançamentos)
     pool.query(
       `SELECT COALESCE(SUM(valor), 0) as total FROM lancamentos
        WHERE tipo='entrada' AND DATE_TRUNC('month', data) = DATE_TRUNC('month', $1::date)`,
       [mesDate]
     ),
-    pool.query(
-      `SELECT COALESCE(SUM(valor), 0) as total FROM lancamentos
-       WHERE tipo='saida' AND DATE_TRUNC('month', data) = DATE_TRUNC('month', $1::date)`,
-      [mesDate]
-    ),
+    // Contas pagas no mês
     pool.query(
       `SELECT COALESCE(SUM(valor), 0) as total FROM contas
        WHERE DATE_TRUNC('month', mes_referencia) = DATE_TRUNC('month', $1::date)
        AND status = 'paga'`,
       [mesDate]
     ),
+    // Contas pendentes/atrasadas no mês
     pool.query(
       `SELECT COALESCE(SUM(valor), 0) as total FROM contas
        WHERE DATE_TRUNC('month', mes_referencia) = DATE_TRUNC('month', $1::date)
        AND status IN ('pendente', 'atrasada')`,
       [mesDate]
     ),
-    pool.query(
-      `SELECT COALESCE(SUM(p.valor), 0) as total, COUNT(*) as quantidade
-       FROM parcelas_divida p
-       WHERE DATE_TRUNC('month', p.data_vencimento) = DATE_TRUNC('month', $1::date)`,
-      [mesDate]
-    ),
+    // Contas vencendo nos próximos 7 dias
     pool.query(
       `SELECT c.*, cat.nome as categoria_nome FROM contas c
        LEFT JOIN categorias cat ON c.categoria_id = cat.id
@@ -50,6 +41,7 @@ router.get('/', async (req, res) => {
            BETWEEN CURRENT_DATE AND CURRENT_DATE + 7`,
       [mesDate]
     ),
+    // Contas atrasadas
     pool.query(
       `SELECT c.*, cat.nome as categoria_nome FROM contas c
        LEFT JOIN categorias cat ON c.categoria_id = cat.id
@@ -57,34 +49,52 @@ router.get('/', async (req, res) => {
        AND status='atrasada'`,
       [mesDate]
     ),
+    // Histórico mensal de entradas (últimos 6 meses)
     pool.query(
-      `SELECT cat.nome as categoria, COALESCE(SUM(l.valor), 0) as total
-       FROM lancamentos l
-       LEFT JOIN categorias cat ON l.categoria_id = cat.id
-       WHERE l.tipo='saida' AND DATE_TRUNC('month', l.data) = DATE_TRUNC('month', $1::date)
-       GROUP BY cat.nome ORDER BY total DESC`,
-      [mesDate]
+      `SELECT TO_CHAR(m.mes, 'YYYY-MM') as mes,
+              COALESCE(SUM(l.valor::numeric), 0) as total
+       FROM generate_series(
+         DATE_TRUNC('month', NOW()) - INTERVAL '5 months',
+         DATE_TRUNC('month', NOW()),
+         '1 month'::interval
+       ) as m(mes)
+       LEFT JOIN lancamentos l
+         ON DATE_TRUNC('month', l.data) = m.mes AND l.tipo = 'entrada'
+       GROUP BY m.mes ORDER BY m.mes`
+    ),
+    // Histórico mensal de saídas — contas pagas (últimos 6 meses)
+    pool.query(
+      `SELECT TO_CHAR(m.mes, 'YYYY-MM') as mes,
+              COALESCE(SUM(c.valor::numeric), 0) as total
+       FROM generate_series(
+         DATE_TRUNC('month', NOW()) - INTERVAL '5 months',
+         DATE_TRUNC('month', NOW()),
+         '1 month'::interval
+       ) as m(mes)
+       LEFT JOIN contas c
+         ON DATE_TRUNC('month', c.mes_referencia) = m.mes AND c.status = 'paga'
+       GROUP BY m.mes ORDER BY m.mes`
     ),
   ])
 
-  const total_entradas    = parseFloat(entradas.rows[0].total)
-  const total_saidas      = parseFloat(saidas.rows[0].total)
-  const total_contas_pagas    = parseFloat(contasPagas.rows[0].total)
-  const total_contas_pendentes = parseFloat(contasPendentes.rows[0].total)
-  const total_parcelas_mes    = parseFloat(parcelasMes.rows[0].total)
-  const qtd_parcelas_mes      = parseInt(parcelasMes.rows[0].quantidade)
+  // Mescla os dois históricos por mês
+  const historicoMap = {}
+  historicoEntradas.rows.forEach(r => {
+    historicoMap[r.mes] = { mes: r.mes, entradas: parseFloat(r.total), saidas: 0 }
+  })
+  historicoSaidas.rows.forEach(r => {
+    if (historicoMap[r.mes]) historicoMap[r.mes].saidas = parseFloat(r.total)
+    else historicoMap[r.mes] = { mes: r.mes, entradas: 0, saidas: parseFloat(r.total) }
+  })
+  const historico_mensal = Object.values(historicoMap).sort((a, b) => a.mes.localeCompare(b.mes))
 
   res.json({
-    total_entradas,
-    total_saidas,
-    saldo: total_entradas - total_saidas,
-    total_contas_pagas,
-    total_contas_pendentes,
-    total_parcelas_mes,
-    qtd_parcelas_mes,
-    contas_proximas: contasProximas.rows,
-    contas_atrasadas: contasAtrasadas.rows,
-    gastos_por_categoria: gastosCat.rows,
+    total_entradas:        parseFloat(entradas.rows[0].total),
+    total_contas_pagas:    parseFloat(contasPagas.rows[0].total),
+    total_contas_pendentes: parseFloat(contasPendentes.rows[0].total),
+    contas_proximas:       contasProximas.rows,
+    contas_atrasadas:      contasAtrasadas.rows,
+    historico_mensal,
   })
 })
 

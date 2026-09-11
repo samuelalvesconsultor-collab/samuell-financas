@@ -2,61 +2,140 @@ import { useEffect, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { getDashboard } from '../api/dashboard'
 import { criarLancamento } from '../api/lancamentos'
-import StatusBadge from '../components/StatusBadge'
+import { pagarConta, atualizarConta } from '../api/contas'
 import MonthPicker from '../components/MonthPicker'
 import PageHeader from '../components/PageHeader'
 import Modal from '../components/Modal'
 import FormLancamento from '../components/FormLancamento'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import FormConta from '../components/FormConta'
+import StatusBadge from '../components/StatusBadge'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts'
 
-const CORES = ['#dc2626','#0d9488','#d97706','#7c3aed','#0891b2','#be185d','#65a30d','#6b7280']
 const BRL = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+const MESES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+const mesLabel = s => MESES_PT[parseInt(s.split('-')[1]) - 1]
 
-function HealthBadge({ dados }) {
-  const critico = dados.saldo < 0 || dados.contas_atrasadas.length > 0
-  const atencao = !critico && (dados.contas_proximas.length > 0 || dados.total_contas_pendentes > 0)
-  const cfg = critico
-    ? { dot: 'bg-red-500',    text: 'text-red-400',   label: 'CRÍTICO'  }
-    : atencao
-      ? { dot: 'bg-yellow-500', text: 'text-yellow-400', label: 'ATENÇÃO'  }
-      : { dot: 'bg-teal-500',   text: 'text-teal-400',   label: 'SAUDÁVEL' }
-  return (
-    <span className={`flex items-center gap-1.5 text-[10px] font-bold tracking-widest ${cfg.text}`}>
-      <span className={`w-2 h-2 rounded-full ${cfg.dot} animate-pulse`} />
-      {cfg.label}
-    </span>
-  )
+const fmtVencimento = c => {
+  const d = new Date(c.mes_referencia)
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), c.dia_vencimento))
+    .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
 }
 
-function MetricCard({ label, valor, cor, sub }) {
-  const colors = {
-    verde:    { line: '#0d9488', value: '#ffffff' },
-    vermelho: { line: '#dc2626', value: '#f87171' },
-    amarelo:  { line: '#d97706', value: '#fbbf24' },
-    cinza:    { line: '#6b7280', value: '#d1d5db' },
-  }
-  const c = colors[cor] || colors.cinza
+// --- Cards de topo ---
+
+function CardEntrada({ valor }) {
   return (
-    <div className="rounded-xl p-4 flex flex-col justify-between"
-      style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)', minHeight: 88 }}>
-      <div>
-        <p className="text-[9px] md:text-[10px] uppercase tracking-widest text-gray-600 mb-1.5 leading-tight">{label}</p>
-        <div className="h-0.5 w-4 rounded-full mb-2" style={{ background: c.line }} />
-      </div>
-      <div>
-        <p className="font-display text-base md:text-lg font-bold tabular-nums leading-tight" style={{ color: c.value }}>
-          {BRL(valor)}
-        </p>
-        {sub && <p className="text-[9px] text-gray-600 mt-1">{sub}</p>}
+    <div className="rounded-xl p-4 md:p-5 relative overflow-hidden"
+      style={{ background: '#111', border: '1px solid rgba(0,230,118,0.2)', boxShadow: '0 0 24px rgba(0,230,118,0.06)' }}>
+      <div className="absolute inset-0 opacity-5 pointer-events-none"
+        style={{ background: 'radial-gradient(circle at 80% 20%, #00e676, transparent 60%)' }} />
+      <p className="text-[10px] uppercase tracking-widest text-gray-600 mb-3">Entrada do Mês</p>
+      <p className="font-display text-2xl md:text-3xl font-bold tabular-nums leading-none"
+        style={{ color: '#00e676', textShadow: '0 0 20px rgba(0,230,118,0.5)' }}>
+        {BRL(valor)}
+      </p>
+      <div className="mt-3 flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="text-[10px] text-emerald-600 tracking-wide">Receita registrada</span>
       </div>
     </div>
   )
 }
 
+function CardPagas({ valor }) {
+  return (
+    <div className="rounded-xl p-4 md:p-5"
+      style={{ background: '#111', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <p className="text-[10px] uppercase tracking-widest text-gray-600 mb-3">Contas Pagas</p>
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center"
+          style={{ border: '2px solid #00e676', boxShadow: '0 0 14px rgba(0,230,118,0.35)' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00e676" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <p className="font-display text-xl md:text-2xl font-bold tabular-nums text-white leading-none">
+          {BRL(valor)}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function CardPendentes({ valor }) {
+  const temPendente = valor > 0
+  return (
+    <div className="rounded-xl p-4 md:p-5 relative overflow-hidden"
+      style={{
+        background: '#111',
+        border: temPendente ? '1px solid rgba(255,23,68,0.25)' : '1px solid rgba(255,255,255,0.06)',
+        boxShadow: temPendente ? '0 0 24px rgba(255,23,68,0.07)' : 'none',
+      }}>
+      {temPendente && (
+        <div className="absolute inset-0 opacity-5 pointer-events-none"
+          style={{ background: 'radial-gradient(circle at 80% 20%, #ff1744, transparent 60%)' }} />
+      )}
+      <p className="text-[10px] uppercase tracking-widest text-gray-600 mb-3">Contas Pendentes</p>
+      <p className="font-display text-2xl md:text-3xl font-bold tabular-nums leading-none"
+        style={{ color: temPendente ? '#ff1744' : '#9ca3af', textShadow: temPendente ? '0 0 20px rgba(255,23,68,0.4)' : 'none' }}>
+        {BRL(valor)}
+      </p>
+      {temPendente && (
+        <div className="mt-3 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          <span className="text-[10px] text-red-700 tracking-wide">Pagamento pendente</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// --- Tooltip dos gráficos ---
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="rounded-lg px-3 py-2 text-xs"
+      style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}>
+      <p className="text-gray-500 mb-1">{mesLabel(label)}</p>
+      <p className="font-bold tabular-nums">{BRL(payload[0].value)}</p>
+    </div>
+  )
+}
+
+// --- Gráfico de barras genérico ---
+function GraficoMensal({ titulo, dados, dataKey, cor, gradientId }) {
+  return (
+    <div className="rounded-xl p-4 md:p-5 flex-1 min-w-0"
+      style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <p className="text-[10px] font-bold tracking-widest uppercase mb-4" style={{ color: cor }}>{titulo}</p>
+      <ResponsiveContainer width="100%" height={150}>
+        <BarChart data={dados} barSize={20} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={cor} stopOpacity={0.9} />
+              <stop offset="100%" stopColor={cor} stopOpacity={0.2} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.04)" />
+          <XAxis dataKey="mes" tickFormatter={mesLabel} tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
+          <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+          <Bar dataKey={dataKey} fill={`url(#${gradientId})`} radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+// --- Página principal ---
 export default function Dashboard() {
   const { mesSelecionado } = useApp()
   const [dados, setDados] = useState(null)
   const [modalLanc, setModalLanc] = useState(false)
+  const [editConta, setEditConta] = useState(null)
+  const [pagando, setPagando] = useState(new Set())
 
   const carregar = () => getDashboard(mesSelecionado).then(setDados)
   useEffect(() => { carregar() }, [mesSelecionado])
@@ -67,10 +146,21 @@ export default function Dashboard() {
     carregar()
   }
 
+  async function marcarContaPaga(conta) {
+    setPagando(s => new Set([...s, conta.id]))
+    await pagarConta(conta.id, new Date().toISOString().split('T')[0])
+    await carregar()
+    setPagando(s => { const n = new Set(s); n.delete(conta.id); return n })
+  }
+
+  async function salvarEdicaoConta(form) {
+    await atualizarConta(editConta.id, form)
+    setEditConta(null)
+    carregar()
+  }
+
   const semDados = dados &&
-    dados.total_entradas === 0 && dados.total_saidas === 0 &&
-    dados.total_contas_pagas === 0 && dados.total_contas_pendentes === 0 &&
-    dados.total_parcelas_mes === 0
+    dados.total_entradas === 0 && dados.total_contas_pagas === 0 && dados.total_contas_pendentes === 0
 
   return (
     <div className="min-h-screen" style={{ background: '#121212' }}>
@@ -89,55 +179,29 @@ export default function Dashboard() {
           <div className="rounded-xl p-10 text-center"
             style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' }}>
             <p className="text-gray-500 text-sm mb-1">Nenhum dado neste mês</p>
-            <button onClick={() => setModalLanc(true)} className="text-red-500 text-sm hover:text-red-400 underline underline-offset-2">
+            <button onClick={() => setModalLanc(true)}
+              className="text-red-500 text-sm hover:text-red-400 underline underline-offset-2">
               Adicionar lançamento
             </button>
           </div>
         ) : (
           <>
-            {/* Barra de saldo / status */}
-            <div className="rounded-xl bg-red-600 p-4 md:p-5 flex items-center justify-between relative overflow-hidden">
-              <div className="absolute right-0 top-0 bottom-0 opacity-10 pointer-events-none">
-                <svg width="120" height="80" viewBox="0 0 120 80" fill="white"><circle cx="80" cy="40" r="50" /></svg>
-              </div>
-              <div>
-                <p className="text-red-200 text-[10px] uppercase tracking-widest mb-0.5">Saldo do Mês</p>
-                <p className="font-display text-white text-xl md:text-2xl font-bold tabular-nums">{BRL(dados.saldo)}</p>
-              </div>
-              <HealthBadge dados={dados} />
+            {/* 3 cards principais */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <CardEntrada valor={dados.total_entradas} />
+              <CardPagas   valor={dados.total_contas_pagas} />
+              <CardPendentes valor={dados.total_contas_pendentes} />
             </div>
-
-            {/* 4 cards principais — 2 colunas no mobile, 4 no desktop */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
-              <MetricCard label="Entradas do Mês"  valor={dados.total_entradas}         cor="verde" />
-              <MetricCard label="Contas Pagas"      valor={dados.total_contas_pagas}     cor={dados.total_contas_pagas > 0 ? 'verde' : 'cinza'} />
-              <MetricCard label="Contas Pendentes"  valor={dados.total_contas_pendentes} cor={dados.total_contas_pendentes > 0 ? 'vermelho' : 'cinza'} />
-              <MetricCard
-                label="Total de Parcelas"
-                valor={dados.total_parcelas_mes}
-                cor={dados.total_parcelas_mes > 0 ? 'amarelo' : 'cinza'}
-                sub={dados.qtd_parcelas_mes > 0 ? `${dados.qtd_parcelas_mes} parcela${dados.qtd_parcelas_mes > 1 ? 's' : ''} no mês` : null}
-              />
-            </div>
-
-            {/* Saídas dos lançamentos */}
-            {dados.total_saidas > 0 && (
-              <div className="rounded-xl p-4 flex items-center justify-between"
-                style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <span className="text-[10px] text-gray-600 uppercase tracking-widest">Saídas (lançamentos)</span>
-                <span className="font-display text-red-400 font-bold tabular-nums text-sm md:text-base">{BRL(dados.total_saidas)}</span>
-              </div>
-            )}
 
             {/* Alerta: contas atrasadas */}
             {dados.contas_atrasadas.length > 0 && (
               <div className="rounded-xl p-4"
-                style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)' }}>
+                style={{ background: 'rgba(255,23,68,0.06)', border: '1px solid rgba(255,23,68,0.2)' }}>
                 <h2 className="text-[10px] font-bold tracking-widest text-red-400 uppercase mb-3">Contas Atrasadas</h2>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {dados.contas_atrasadas.map(c => (
                     <div key={c.id} className="flex justify-between items-center py-2"
-                      style={{ borderBottom: '1px solid rgba(220,38,38,0.1)' }}>
+                      style={{ borderBottom: '1px solid rgba(255,23,68,0.08)' }}>
                       <span className="text-sm text-red-200 truncate pr-3">{c.descricao}</span>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-sm text-red-300 tabular-nums">{BRL(c.valor)}</span>
@@ -149,61 +213,87 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Alerta: vencendo em breve */}
+            {/* Vencendo em breve */}
             {dados.contas_proximas.length > 0 && (
               <div className="rounded-xl p-4"
-                style={{ background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.2)' }}>
+                style={{ background: 'rgba(234,179,8,0.05)', border: '1px solid rgba(234,179,8,0.18)' }}>
                 <h2 className="text-[10px] font-bold tracking-widest text-yellow-400 uppercase mb-3">Vencendo em Breve</h2>
-                <div className="space-y-2">
+                <div className="space-y-0.5">
                   {dados.contas_proximas.map(c => (
-                    <div key={c.id} className="flex justify-between items-center py-2"
-                      style={{ borderBottom: '1px solid rgba(234,179,8,0.08)' }}>
-                      <span className="text-sm text-yellow-200 truncate pr-3">{c.descricao}</span>
+                    <div key={c.id} className="flex items-center gap-3 py-2.5"
+                      style={{ borderBottom: '1px solid rgba(234,179,8,0.06)' }}>
+                      {/* Checkbox marcar como pago */}
+                      <button
+                        onClick={() => marcarContaPaga(c)}
+                        disabled={pagando.has(c.id)}
+                        className="w-5 h-5 rounded flex items-center justify-center shrink-0 transition-colors"
+                        style={{ border: '1.5px solid rgba(234,179,8,0.4)', background: pagando.has(c.id) ? 'rgba(0,230,118,0.15)' : 'transparent' }}
+                        title="Marcar como pago">
+                        {pagando.has(c.id) && (
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00e676" strokeWidth="3">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </button>
+
+                      {/* Descrição + data */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-yellow-100 truncate">{c.descricao}</p>
+                        <p className="text-[10px] text-yellow-700 mt-0.5">Vence {fmtVencimento(c)}</p>
+                      </div>
+
+                      {/* Valor */}
                       <span className="text-sm text-yellow-300 tabular-nums shrink-0">{BRL(c.valor)}</span>
+
+                      {/* Botão editar */}
+                      <button onClick={() => setEditConta(c)}
+                        className="text-gray-600 hover:text-gray-300 shrink-0 transition-colors"
+                        title="Editar conta">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                      </button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Gráfico por categoria */}
-            {dados.gastos_por_categoria.length > 0 && (
-              <div className="rounded-xl p-4 md:p-5"
-                style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <h2 className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-4">Gastos por Categoria</h2>
-                <div className="flex flex-col lg:flex-row gap-4 md:gap-6 items-center">
-                  <ResponsiveContainer width="100%" height={160}>
-                    <PieChart>
-                      <Pie data={dados.gastos_por_categoria} dataKey="total" nameKey="categoria" cx="50%" cy="50%" outerRadius={70} stroke="none">
-                        {dados.gastos_por_categoria.map((_, i) => <Cell key={i} fill={CORES[i % CORES.length]} />)}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', fontSize: 12 }}
-                        formatter={v => BRL(v)}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="space-y-2 w-full lg:min-w-[160px] lg:w-auto">
-                    {dados.gastos_por_categoria.map((g, i) => (
-                      <div key={g.categoria} className="flex justify-between items-center gap-3 text-sm">
-                        <span className="flex items-center gap-2 text-gray-400 min-w-0">
-                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: CORES[i % CORES.length] }} />
-                          <span className="truncate">{g.categoria || 'Sem categoria'}</span>
-                        </span>
-                        <span className="font-semibold text-white tabular-nums shrink-0">{BRL(g.total)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            {/* Gráficos mensais lado a lado */}
+            {dados.historico_mensal.length > 0 && (
+              <div className="flex flex-col sm:flex-row gap-3">
+                <GraficoMensal
+                  titulo="Entradas Mensais"
+                  dados={dados.historico_mensal}
+                  dataKey="entradas"
+                  cor="#00e676"
+                  gradientId="gradEntradas"
+                />
+                <GraficoMensal
+                  titulo="Saídas Mensais"
+                  dados={dados.historico_mensal}
+                  dataKey="saidas"
+                  cor="#ff1744"
+                  gradientId="gradSaidas"
+                />
               </div>
             )}
           </>
         )}
       </div>
 
+      {/* Modal novo lançamento */}
       {modalLanc && (
         <Modal titulo="NOVO LANÇAMENTO" onClose={() => setModalLanc(false)}>
           <FormLancamento onSalvar={salvarLancamento} onCancelar={() => setModalLanc(false)} />
+        </Modal>
+      )}
+
+      {/* Modal editar conta (via Vencendo em breve) */}
+      {editConta && (
+        <Modal titulo="EDITAR CONTA" onClose={() => setEditConta(null)}>
+          <FormConta inicial={editConta} onSalvar={salvarEdicaoConta} onCancelar={() => setEditConta(null)} />
         </Modal>
       )}
     </div>
