@@ -52,7 +52,7 @@ html.light .td { color: #111827; }
   body {
     background-color: var(--surface);
     color: var(--text);
-    font-family: 'Barlow', ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
