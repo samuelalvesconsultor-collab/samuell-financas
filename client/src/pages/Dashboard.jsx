@@ -102,8 +102,10 @@ function ChartTooltip({ active, payload, label }) {
 }
 
 function GraficoMensal({ titulo, dados, dataKey, cor, gradientId }) {
+  const total = dados.reduce((s, d) => s + Number(d[dataKey] || 0), 0)
+
   return (
-    <div className="rounded-xl p-4 md:p-5 flex-1 min-w-0"
+    <div className="rounded-xl p-4 md:p-5 flex-1 min-w-0 flex flex-col"
       style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
       <p className="text-[10px] font-bold tracking-widest uppercase mb-4" style={{ color: cor }}>{titulo}</p>
       <ResponsiveContainer width="100%" height={150}>
@@ -121,6 +123,11 @@ function GraficoMensal({ titulo, dados, dataKey, cor, gradientId }) {
           <Bar dataKey={dataKey} fill={`url(#${gradientId})`} radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
+      <div className="mt-3 pt-3 flex items-center justify-between"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <span className="text-[10px] text-gray-600 uppercase tracking-widest">Total acumulado</span>
+        <span className="text-xs font-semibold tabular-nums" style={{ color: cor }}>{BRL(total)}</span>
+      </div>
     </div>
   )
 }
