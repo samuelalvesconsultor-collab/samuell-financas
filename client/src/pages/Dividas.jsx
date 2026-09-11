@@ -154,13 +154,14 @@ export default function Dividas() {
   return (
     <div className="min-h-screen" style={{ background: '#121212' }}>
       <PageHeader titulo="Dívidas">
-        <select value={filtroAtiva} onChange={e => setFiltroAtiva(e.target.value)} className="select-dark !w-auto">
+        <select value={filtroAtiva} onChange={e => setFiltroAtiva(e.target.value)} className="select-dark !w-auto text-xs md:text-sm">
           <option value="true">Ativas</option>
           <option value="false">Quitadas</option>
           <option value="">Todas</option>
         </select>
-        <button onClick={() => setModal('novo')} className="btn-action">
-          <span className="text-lg leading-none">+</span> Nova
+        <button onClick={() => setModal('novo')} className="btn-action text-xs md:text-sm px-3 md:px-4">
+          <span className="text-base md:text-lg leading-none">+</span>
+          <span className="hidden sm:inline">Nova</span>
         </button>
       </PageHeader>
 

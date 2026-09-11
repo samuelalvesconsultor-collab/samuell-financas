@@ -38,14 +38,16 @@ function MetricCard({ label, valor, cor, sub }) {
   const c = colors[cor] || colors.cinza
   return (
     <div className="rounded-xl p-4 flex flex-col justify-between"
-      style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)', minHeight: 96 }}>
+      style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)', minHeight: 88 }}>
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-gray-600 mb-1.5">{label}</p>
-        <div className="h-0.5 w-5 rounded-full mb-2.5" style={{ background: c.line }} />
+        <p className="text-[9px] md:text-[10px] uppercase tracking-widest text-gray-600 mb-1.5 leading-tight">{label}</p>
+        <div className="h-0.5 w-4 rounded-full mb-2" style={{ background: c.line }} />
       </div>
       <div>
-        <p className="font-display text-lg font-bold tabular-nums leading-tight" style={{ color: c.value }}>{BRL(valor)}</p>
-        {sub && <p className="text-[10px] text-gray-600 mt-1">{sub}</p>}
+        <p className="font-display text-base md:text-lg font-bold tabular-nums leading-tight" style={{ color: c.value }}>
+          {BRL(valor)}
+        </p>
+        {sub && <p className="text-[9px] text-gray-600 mt-1">{sub}</p>}
       </div>
     </div>
   )
@@ -74,12 +76,13 @@ export default function Dashboard() {
     <div className="min-h-screen" style={{ background: '#121212' }}>
       <PageHeader titulo="Dashboard">
         <MonthPicker />
-        <button onClick={() => setModalLanc(true)} className="btn-action">
-          <span className="text-lg leading-none">+</span> Lançamento
+        <button onClick={() => setModalLanc(true)} className="btn-action text-xs md:text-sm px-3 md:px-4">
+          <span className="text-base md:text-lg leading-none">+</span>
+          <span className="hidden sm:inline">Lançamento</span>
         </button>
       </PageHeader>
 
-      <div className="p-6 space-y-5 max-w-4xl">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-5 max-w-4xl">
         {!dados ? (
           <p className="text-gray-600 text-sm">Carregando...</p>
         ) : semDados ? (
@@ -92,37 +95,23 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
-            {/* Barra de status / saldo */}
-            <div className="rounded-xl bg-red-600 p-5 flex items-center justify-between relative overflow-hidden">
-              <div className="absolute right-0 top-0 bottom-0 opacity-10">
-                <svg width="120" height="80" viewBox="0 0 120 80" fill="white">
-                  <circle cx="80" cy="40" r="50" />
-                </svg>
+            {/* Barra de saldo / status */}
+            <div className="rounded-xl bg-red-600 p-4 md:p-5 flex items-center justify-between relative overflow-hidden">
+              <div className="absolute right-0 top-0 bottom-0 opacity-10 pointer-events-none">
+                <svg width="120" height="80" viewBox="0 0 120 80" fill="white"><circle cx="80" cy="40" r="50" /></svg>
               </div>
               <div>
-                <p className="text-red-200 text-[10px] uppercase tracking-widest mb-1">Saldo do Mês</p>
-                <p className="font-display text-white text-2xl font-bold tabular-nums">{BRL(dados.saldo)}</p>
+                <p className="text-red-200 text-[10px] uppercase tracking-widest mb-0.5">Saldo do Mês</p>
+                <p className="font-display text-white text-xl md:text-2xl font-bold tabular-nums">{BRL(dados.saldo)}</p>
               </div>
               <HealthBadge dados={dados} />
             </div>
 
-            {/* 4 cards principais */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <MetricCard
-                label="Entradas do Mês"
-                valor={dados.total_entradas}
-                cor="verde"
-              />
-              <MetricCard
-                label="Contas Pagas"
-                valor={dados.total_contas_pagas}
-                cor={dados.total_contas_pagas > 0 ? 'verde' : 'cinza'}
-              />
-              <MetricCard
-                label="Contas Pendentes"
-                valor={dados.total_contas_pendentes}
-                cor={dados.total_contas_pendentes > 0 ? 'vermelho' : 'cinza'}
-              />
+            {/* 4 cards principais — 2 colunas no mobile, 4 no desktop */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
+              <MetricCard label="Entradas do Mês"  valor={dados.total_entradas}         cor="verde" />
+              <MetricCard label="Contas Pagas"      valor={dados.total_contas_pagas}     cor={dados.total_contas_pagas > 0 ? 'verde' : 'cinza'} />
+              <MetricCard label="Contas Pendentes"  valor={dados.total_contas_pendentes} cor={dados.total_contas_pendentes > 0 ? 'vermelho' : 'cinza'} />
               <MetricCard
                 label="Total de Parcelas"
                 valor={dados.total_parcelas_mes}
@@ -136,52 +125,56 @@ export default function Dashboard() {
               <div className="rounded-xl p-4 flex items-center justify-between"
                 style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <span className="text-[10px] text-gray-600 uppercase tracking-widest">Saídas (lançamentos)</span>
-                <span className="font-display text-red-400 font-bold tabular-nums">{BRL(dados.total_saidas)}</span>
+                <span className="font-display text-red-400 font-bold tabular-nums text-sm md:text-base">{BRL(dados.total_saidas)}</span>
               </div>
             )}
 
-            {/* Alertas: atrasadas */}
+            {/* Alerta: contas atrasadas */}
             {dados.contas_atrasadas.length > 0 && (
               <div className="rounded-xl p-4"
                 style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)' }}>
                 <h2 className="text-[10px] font-bold tracking-widest text-red-400 uppercase mb-3">Contas Atrasadas</h2>
-                {dados.contas_atrasadas.map(c => (
-                  <div key={c.id} className="flex justify-between items-center py-2"
-                    style={{ borderBottom: '1px solid rgba(220,38,38,0.1)' }}>
-                    <span className="text-sm text-red-200">{c.descricao}</span>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-red-300 tabular-nums">{BRL(c.valor)}</span>
-                      <StatusBadge status="atrasada" />
+                <div className="space-y-2">
+                  {dados.contas_atrasadas.map(c => (
+                    <div key={c.id} className="flex justify-between items-center py-2"
+                      style={{ borderBottom: '1px solid rgba(220,38,38,0.1)' }}>
+                      <span className="text-sm text-red-200 truncate pr-3">{c.descricao}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-sm text-red-300 tabular-nums">{BRL(c.valor)}</span>
+                        <StatusBadge status="atrasada" />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Alertas: vencendo em breve */}
+            {/* Alerta: vencendo em breve */}
             {dados.contas_proximas.length > 0 && (
               <div className="rounded-xl p-4"
                 style={{ background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.2)' }}>
                 <h2 className="text-[10px] font-bold tracking-widest text-yellow-400 uppercase mb-3">Vencendo em Breve</h2>
-                {dados.contas_proximas.map(c => (
-                  <div key={c.id} className="flex justify-between items-center py-2"
-                    style={{ borderBottom: '1px solid rgba(234,179,8,0.08)' }}>
-                    <span className="text-sm text-yellow-200">{c.descricao}</span>
-                    <span className="text-sm text-yellow-300 tabular-nums">{BRL(c.valor)}</span>
-                  </div>
-                ))}
+                <div className="space-y-2">
+                  {dados.contas_proximas.map(c => (
+                    <div key={c.id} className="flex justify-between items-center py-2"
+                      style={{ borderBottom: '1px solid rgba(234,179,8,0.08)' }}>
+                      <span className="text-sm text-yellow-200 truncate pr-3">{c.descricao}</span>
+                      <span className="text-sm text-yellow-300 tabular-nums shrink-0">{BRL(c.valor)}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
             {/* Gráfico por categoria */}
             {dados.gastos_por_categoria.length > 0 && (
-              <div className="rounded-xl p-5"
+              <div className="rounded-xl p-4 md:p-5"
                 style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <h2 className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-4">Gastos por Categoria</h2>
-                <div className="flex flex-col lg:flex-row gap-6 items-center">
-                  <ResponsiveContainer width="100%" height={180}>
+                <div className="flex flex-col lg:flex-row gap-4 md:gap-6 items-center">
+                  <ResponsiveContainer width="100%" height={160}>
                     <PieChart>
-                      <Pie data={dados.gastos_por_categoria} dataKey="total" nameKey="categoria" cx="50%" cy="50%" outerRadius={75} stroke="none">
+                      <Pie data={dados.gastos_por_categoria} dataKey="total" nameKey="categoria" cx="50%" cy="50%" outerRadius={70} stroke="none">
                         {dados.gastos_por_categoria.map((_, i) => <Cell key={i} fill={CORES[i % CORES.length]} />)}
                       </Pie>
                       <Tooltip
@@ -190,14 +183,14 @@ export default function Dashboard() {
                       />
                     </PieChart>
                   </ResponsiveContainer>
-                  <div className="space-y-2 min-w-[160px] w-full lg:w-auto">
+                  <div className="space-y-2 w-full lg:min-w-[160px] lg:w-auto">
                     {dados.gastos_por_categoria.map((g, i) => (
-                      <div key={g.categoria} className="flex justify-between items-center gap-4 text-sm">
-                        <span className="flex items-center gap-2 text-gray-400">
+                      <div key={g.categoria} className="flex justify-between items-center gap-3 text-sm">
+                        <span className="flex items-center gap-2 text-gray-400 min-w-0">
                           <span className="w-2 h-2 rounded-full shrink-0" style={{ background: CORES[i % CORES.length] }} />
-                          {g.categoria || 'Sem categoria'}
+                          <span className="truncate">{g.categoria || 'Sem categoria'}</span>
                         </span>
-                        <span className="font-semibold text-white tabular-nums">{BRL(g.total)}</span>
+                        <span className="font-semibold text-white tabular-nums shrink-0">{BRL(g.total)}</span>
                       </div>
                     ))}
                   </div>
