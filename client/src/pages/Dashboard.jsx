@@ -23,15 +23,13 @@ const fmtVencimento = c => {
     .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
 }
 
-// --- Cards de topo ---
-
-function CardEntrada({ valor }) {
+function CardEntrada({ titulo, valor }) {
   return (
     <div className="rounded-xl p-4 md:p-5 relative overflow-hidden"
-      style={{ background: '#111', border: '1px solid rgba(0,230,118,0.2)', boxShadow: '0 0 24px rgba(0,230,118,0.06)' }}>
+      style={{ background: 'var(--card)', border: '1px solid rgba(0,230,118,0.2)', boxShadow: '0 0 24px rgba(0,230,118,0.06)' }}>
       <div className="absolute inset-0 opacity-5 pointer-events-none"
         style={{ background: 'radial-gradient(circle at 80% 20%, #00e676, transparent 60%)' }} />
-      <p className="text-[10px] uppercase tracking-widest text-gray-600 mb-3">Entrada do Mês</p>
+      <p className="text-[10px] uppercase tracking-widest text-gray-600 mb-3">{titulo}</p>
       <p className="font-display text-2xl md:text-3xl font-bold tabular-nums leading-none"
         style={{ color: '#00e676', textShadow: '0 0 20px rgba(0,230,118,0.5)' }}>
         {BRL(valor)}
@@ -44,11 +42,11 @@ function CardEntrada({ valor }) {
   )
 }
 
-function CardPagas({ valor }) {
+function CardPagas({ titulo, valor }) {
   return (
     <div className="rounded-xl p-4 md:p-5"
-      style={{ background: '#111', border: '1px solid rgba(255,255,255,0.06)' }}>
-      <p className="text-[10px] uppercase tracking-widest text-gray-600 mb-3">Contas Pagas</p>
+      style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
+      <p className="text-[10px] uppercase tracking-widest text-gray-600 mb-3">{titulo}</p>
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center"
           style={{ border: '2px solid #00e676', boxShadow: '0 0 14px rgba(0,230,118,0.35)' }}>
@@ -64,20 +62,20 @@ function CardPagas({ valor }) {
   )
 }
 
-function CardPendentes({ valor }) {
+function CardPendentes({ titulo, valor }) {
   const temPendente = valor > 0
   return (
     <div className="rounded-xl p-4 md:p-5 relative overflow-hidden"
       style={{
-        background: '#111',
-        border: temPendente ? '1px solid rgba(255,23,68,0.25)' : '1px solid rgba(255,255,255,0.06)',
+        background: 'var(--card)',
+        border: temPendente ? '1px solid rgba(255,23,68,0.25)' : '1px solid var(--card-border)',
         boxShadow: temPendente ? '0 0 24px rgba(255,23,68,0.07)' : 'none',
       }}>
       {temPendente && (
         <div className="absolute inset-0 opacity-5 pointer-events-none"
           style={{ background: 'radial-gradient(circle at 80% 20%, #ff1744, transparent 60%)' }} />
       )}
-      <p className="text-[10px] uppercase tracking-widest text-gray-600 mb-3">Contas Pendentes</p>
+      <p className="text-[10px] uppercase tracking-widest text-gray-600 mb-3">{titulo}</p>
       <p className="font-display text-2xl md:text-3xl font-bold tabular-nums leading-none"
         style={{ color: temPendente ? '#ff1744' : '#9ca3af', textShadow: temPendente ? '0 0 20px rgba(255,23,68,0.4)' : 'none' }}>
         {BRL(valor)}
@@ -92,23 +90,21 @@ function CardPendentes({ valor }) {
   )
 }
 
-// --- Tooltip dos gráficos ---
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
     <div className="rounded-lg px-3 py-2 text-xs"
-      style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}>
+      style={{ background: 'var(--card)', border: '1px solid var(--card-border)', color: 'var(--text)' }}>
       <p className="text-gray-500 mb-1">{mesLabel(label)}</p>
       <p className="font-bold tabular-nums">{BRL(payload[0].value)}</p>
     </div>
   )
 }
 
-// --- Gráfico de barras genérico ---
 function GraficoMensal({ titulo, dados, dataKey, cor, gradientId }) {
   return (
     <div className="rounded-xl p-4 md:p-5 flex-1 min-w-0"
-      style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' }}>
+      style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
       <p className="text-[10px] font-bold tracking-widest uppercase mb-4" style={{ color: cor }}>{titulo}</p>
       <ResponsiveContainer width="100%" height={150}>
         <BarChart data={dados} barSize={20} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -129,9 +125,14 @@ function GraficoMensal({ titulo, dados, dataKey, cor, gradientId }) {
   )
 }
 
-// --- Página principal ---
+const CARD_MAP = {
+  entrada_mes:      (titulo, dados) => <CardEntrada key="entrada_mes"      titulo={titulo} valor={dados.total_entradas} />,
+  contas_pagas:     (titulo, dados) => <CardPagas   key="contas_pagas"     titulo={titulo} valor={dados.total_contas_pagas} />,
+  contas_pendentes: (titulo, dados) => <CardPendentes key="contas_pendentes" titulo={titulo} valor={dados.total_contas_pendentes} />,
+}
+
 export default function Dashboard() {
-  const { mesSelecionado } = useApp()
+  const { mesSelecionado, config } = useApp()
   const [dados, setDados] = useState(null)
   const [modalLanc, setModalLanc] = useState(false)
   const [editConta, setEditConta] = useState(null)
@@ -162,8 +163,13 @@ export default function Dashboard() {
   const semDados = dados &&
     dados.total_entradas === 0 && dados.total_contas_pagas === 0 && dados.total_contas_pendentes === 0
 
+  const cardsVisiveis = (config.dashboard_cards || [])
+    .slice()
+    .sort((a, b) => a.ordem - b.ordem)
+    .filter(c => c.visivel)
+
   return (
-    <div className="min-h-screen" style={{ background: '#121212' }}>
+    <div className="min-h-screen" style={{ background: 'var(--surface)' }}>
       <PageHeader titulo="Dashboard">
         <MonthPicker />
         <button onClick={() => setModalLanc(true)} className="btn-action text-xs md:text-sm px-3 md:px-4">
@@ -177,7 +183,7 @@ export default function Dashboard() {
           <p className="text-gray-600 text-sm">Carregando...</p>
         ) : semDados ? (
           <div className="rounded-xl p-10 text-center"
-            style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' }}>
+            style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
             <p className="text-gray-500 text-sm mb-1">Nenhum dado neste mês</p>
             <button onClick={() => setModalLanc(true)}
               className="text-red-500 text-sm hover:text-red-400 underline underline-offset-2">
@@ -186,14 +192,12 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
-            {/* 3 cards principais */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <CardEntrada valor={dados.total_entradas} />
-              <CardPagas   valor={dados.total_contas_pagas} />
-              <CardPendentes valor={dados.total_contas_pendentes} />
-            </div>
+            {cardsVisiveis.length > 0 && (
+              <div className={`grid grid-cols-1 gap-3 ${cardsVisiveis.length === 1 ? 'sm:grid-cols-1' : cardsVisiveis.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
+                {cardsVisiveis.map(c => CARD_MAP[c.id] ? CARD_MAP[c.id](c.titulo, dados) : null)}
+              </div>
+            )}
 
-            {/* Alerta: contas atrasadas */}
             {dados.contas_atrasadas.length > 0 && (
               <div className="rounded-xl p-4"
                 style={{ background: 'rgba(255,23,68,0.06)', border: '1px solid rgba(255,23,68,0.2)' }}>
@@ -213,7 +217,6 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Vencendo em breve */}
             {dados.contas_proximas.length > 0 && (
               <div className="rounded-xl p-4"
                 style={{ background: 'rgba(234,179,8,0.05)', border: '1px solid rgba(234,179,8,0.18)' }}>
@@ -222,7 +225,6 @@ export default function Dashboard() {
                   {dados.contas_proximas.map(c => (
                     <div key={c.id} className="flex items-center gap-3 py-2.5"
                       style={{ borderBottom: '1px solid rgba(234,179,8,0.06)' }}>
-                      {/* Checkbox marcar como pago */}
                       <button
                         onClick={() => marcarContaPaga(c)}
                         disabled={pagando.has(c.id)}
@@ -235,17 +237,11 @@ export default function Dashboard() {
                           </svg>
                         )}
                       </button>
-
-                      {/* Descrição + data */}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-yellow-100 truncate">{c.descricao}</p>
                         <p className="text-[10px] text-yellow-700 mt-0.5">Vence {fmtVencimento(c)}</p>
                       </div>
-
-                      {/* Valor */}
                       <span className="text-sm text-yellow-300 tabular-nums shrink-0">{BRL(c.valor)}</span>
-
-                      {/* Botão editar */}
                       <button onClick={() => setEditConta(c)}
                         className="text-gray-600 hover:text-gray-300 shrink-0 transition-colors"
                         title="Editar conta">
@@ -260,7 +256,6 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Gráficos mensais lado a lado */}
             {dados.historico_mensal.length > 0 && (
               <div className="flex flex-col sm:flex-row gap-3">
                 <GraficoMensal
@@ -283,14 +278,12 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Modal novo lançamento */}
       {modalLanc && (
         <Modal titulo="NOVO LANÇAMENTO" onClose={() => setModalLanc(false)}>
           <FormLancamento onSalvar={salvarLancamento} onCancelar={() => setModalLanc(false)} />
         </Modal>
       )}
 
-      {/* Modal editar conta (via Vencendo em breve) */}
       {editConta && (
         <Modal titulo="EDITAR CONTA" onClose={() => setEditConta(null)}>
           <FormConta inicial={editConta} onSalvar={salvarEdicaoConta} onCancelar={() => setEditConta(null)} />

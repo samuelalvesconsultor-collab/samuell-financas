@@ -14,19 +14,19 @@ router.get('/', async (req, res) => {
 })
 
 router.post('/', async (req, res) => {
-  const { nome, tipo } = req.body
+  const { nome, tipo, cor } = req.body
   const { rows } = await pool.query(
-    'INSERT INTO categorias (nome, tipo) VALUES ($1, $2) RETURNING *',
-    [nome, tipo]
+    'INSERT INTO categorias (nome, tipo, cor) VALUES ($1, $2, $3) RETURNING *',
+    [nome, tipo, cor || null]
   )
   res.status(201).json(rows[0])
 })
 
 router.put('/:id', async (req, res) => {
-  const { nome, tipo } = req.body
+  const { nome, tipo, cor } = req.body
   const { rows } = await pool.query(
-    'UPDATE categorias SET nome=$1, tipo=$2 WHERE id=$3 RETURNING *',
-    [nome, tipo, req.params.id]
+    'UPDATE categorias SET nome=$1, tipo=$2, cor=$3 WHERE id=$4 RETURNING *',
+    [nome, tipo, cor || null, req.params.id]
   )
   if (!rows.length) return res.status(404).json({ error: 'Não encontrado' })
   res.json(rows[0])

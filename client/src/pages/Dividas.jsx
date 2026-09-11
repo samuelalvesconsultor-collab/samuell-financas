@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getDividas, criarDivida, atualizarDivida, deletarDivida, getParcelas, pagarParcela } from '../api/dividas'
+import { getConfiguracoes, patchConfiguracao } from '../api/configuracoes'
 import Modal from '../components/Modal'
 import FormDivida from '../components/FormDivida'
 import StatusBadge from '../components/StatusBadge'
@@ -10,13 +11,30 @@ const BRL = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency
 const fmtDate = s => { if (!s) return '—'; const d = new Date(s); d.setMinutes(d.getMinutes()+d.getTimezoneOffset()); return d.toLocaleDateString('pt-BR') }
 const TIPO_LABEL = { cartao: 'Cartão', financiamento: 'Financiamento', emprestimo: 'Empréstimo', parcelamento: 'Parcelamento' }
 
+const GripIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+    <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
+    <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+    <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
+  </svg>
+)
+
+// Aplica ordem salva por IDs; dívidas novas vão para o final
+function aplicarOrdem(lista, ordemIds) {
+  if (!ordemIds || !ordemIds.length) return lista
+  const posMap = new Map(ordemIds.map((id, i) => [id, i]))
+  return [...lista].sort((a, b) => {
+    const ai = posMap.has(a.id) ? posMap.get(a.id) : 9999
+    const bi = posMap.has(b.id) ? posMap.get(b.id) : 9999
+    return ai - bi
+  })
+}
+
 function Parcelas({ divida, onPagar }) {
   const [parcelas, setParcelas] = useState(null)
   const [confirmando, setConfirmando] = useState(null)
 
-  useEffect(() => {
-    getParcelas(divida.id).then(setParcelas)
-  }, [divida.id])
+  useEffect(() => { getParcelas(divida.id).then(setParcelas) }, [divida.id])
 
   async function pagar(p) {
     await pagarParcela(p.id, new Date().toISOString().split('T')[0])
@@ -65,23 +83,39 @@ function Parcelas({ divida, onPagar }) {
   )
 }
 
-function DividaCard({ divida, onEdit, onDelete, onRefresh }) {
+function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDragStart, onDragOver, onDrop, onDragEnd }) {
   const [expandido, setExpandido] = useState(false)
   const progresso = divida.num_parcelas > 0 ? ((divida.parcelas_pagas || 0) / divida.num_parcelas) * 100 : 0
+  const isOver = dragOver === idx
 
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' }}>
-      {/* Header da dívida */}
+    <div
+      draggable
+      onDragStart={() => onDragStart(idx)}
+      onDragOver={e => { e.preventDefault(); onDragOver(idx) }}
+      onDrop={() => onDrop(idx)}
+      onDragEnd={onDragEnd}
+      className="rounded-xl overflow-hidden transition-all duration-150"
+      style={{
+        background: 'var(--card)',
+        border: `1px solid ${isOver ? 'rgba(220,38,38,0.6)' : 'var(--card-border)'}`,
+        boxShadow: isOver ? '0 0 0 2px rgba(220,38,38,0.2)' : 'none',
+        cursor: 'grab',
+      }}
+    >
       <div className="p-4">
         <div className="flex items-start justify-between mb-3">
-          <div>
-            <p className="text-white font-medium">{divida.descricao}</p>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-white font-medium truncate">{divida.descricao}</p>
+              <span style={{ color: 'var(--text-faint)', flexShrink: 0 }}><GripIcon /></span>
+            </div>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-[10px] text-gray-600 uppercase tracking-wide">{TIPO_LABEL[divida.tipo]}</span>
               {divida.categoria_nome && <CategoryBadge nome={divida.categoria_nome} />}
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0 ml-3">
             <p className="text-[10px] text-gray-600 uppercase tracking-wide mb-0.5">Parcela</p>
             <p className="text-white font-bold tabular-nums">{BRL(divida.valor_parcela)}</p>
             {divida.proxima_vencimento && (
@@ -90,7 +124,6 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh }) {
           </div>
         </div>
 
-        {/* Progresso */}
         <div>
           <div className="flex justify-between text-[10px] text-gray-600 mb-1.5">
             <span>{divida.parcelas_pagas || 0} de {divida.num_parcelas} parcelas</span>
@@ -101,18 +134,19 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh }) {
           </div>
         </div>
 
-        {/* Ações */}
         <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
           <button onClick={() => setExpandido(e => !e)}
-            className="text-xs text-gray-500 hover:text-gray-200 transition-colors flex items-center gap-1">
+            className="text-xs text-gray-500 hover:text-gray-200 transition-colors flex items-center gap-1"
+            onMouseDown={e => e.stopPropagation()}>
             {expandido ? '▲' : '▼'} {expandido ? 'Ocultar' : 'Ver'} parcelas
           </button>
-          <button onClick={onEdit} className="text-xs text-gray-600 hover:text-gray-300 transition-colors ml-auto">Editar</button>
-          <button onClick={onDelete} className="text-xs text-gray-600 hover:text-red-400 transition-colors">Excluir</button>
+          <button onClick={onEdit} className="text-xs text-gray-600 hover:text-gray-300 transition-colors ml-auto"
+            onMouseDown={e => e.stopPropagation()}>Editar</button>
+          <button onClick={onDelete} className="text-xs text-gray-600 hover:text-red-400 transition-colors"
+            onMouseDown={e => e.stopPropagation()}>Excluir</button>
         </div>
       </div>
 
-      {/* Parcelas expandidas */}
       {expandido && (
         <div className="px-4 pb-4" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
           <Parcelas divida={divida} onPagar={onRefresh} />
@@ -123,19 +157,51 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh }) {
 }
 
 export default function Dividas() {
-  const [lista, setLista] = useState([])
-  const [modal, setModal] = useState(null)
+  const [lista, setLista]             = useState([])
+  const [modal, setModal]             = useState(null)
   const [filtroAtiva, setFiltroAtiva] = useState('true')
+  const [dragOver, setDragOver]       = useState(null)
+  const dragIdx    = useRef(null)
+  const ordemSalva = useRef([])
+
+  const chaveConfig = `ordem_dividas_${filtroAtiva}`
 
   const carregar = async () => {
+    let data
     if (filtroAtiva === '') {
       const [a, i] = await Promise.all([getDividas(true), getDividas(false)])
-      setLista([...a, ...i])
+      data = [...a, ...i]
     } else {
-      setLista(await getDividas(filtroAtiva === 'true'))
+      data = await getDividas(filtroAtiva === 'true')
     }
+    const cfg = await getConfiguracoes()
+    const ordem = cfg[chaveConfig] ?? []
+    ordemSalva.current = ordem
+    setLista(aplicarOrdem(data, ordem))
   }
   useEffect(() => { carregar() }, [filtroAtiva])
+
+  function salvarOrdem(novaLista) {
+    const ordem = novaLista.map(d => d.id)
+    ordemSalva.current = ordem
+    patchConfiguracao(chaveConfig, JSON.stringify(ordem))
+  }
+
+  function onDragStart(i) { dragIdx.current = i }
+  function onDragOver(i)  { setDragOver(i) }
+  function onDrop(i) {
+    if (dragIdx.current === null || dragIdx.current === i) { dragIdx.current = null; setDragOver(null); return }
+    setLista(l => {
+      const next = [...l]
+      const [moved] = next.splice(dragIdx.current, 1)
+      next.splice(i, 0, moved)
+      salvarOrdem(next)
+      return next
+    })
+    dragIdx.current = null
+    setDragOver(null)
+  }
+  function onDragEnd() { dragIdx.current = null; setDragOver(null) }
 
   async function salvar(dados) {
     if (modal === 'novo') await criarDivida(dados)
@@ -152,7 +218,7 @@ export default function Dividas() {
   const totalMensal = lista.filter(d => d.ativa).reduce((s, d) => s + Number(d.valor_parcela), 0)
 
   return (
-    <div className="min-h-screen" style={{ background: '#121212' }}>
+    <div className="min-h-screen" style={{ background: 'var(--surface)' }}>
       <PageHeader titulo="Dívidas">
         <select value={filtroAtiva} onChange={e => setFiltroAtiva(e.target.value)} className="select-dark !w-auto text-xs md:text-sm">
           <option value="true">Ativas</option>
@@ -176,10 +242,16 @@ export default function Dividas() {
       <div className="p-6 space-y-3">
         {!lista.length
           ? <div className="text-center py-16 text-gray-600 text-sm">Nenhuma dívida encontrada.</div>
-          : lista.map(d => (
+          : lista.map((d, idx) => (
               <DividaCard
                 key={d.id}
                 divida={d}
+                idx={idx}
+                dragOver={dragOver}
+                onDragStart={onDragStart}
+                onDragOver={onDragOver}
+                onDrop={onDrop}
+                onDragEnd={onDragEnd}
                 onEdit={() => setModal(d)}
                 onDelete={() => excluir(d.id)}
                 onRefresh={carregar}

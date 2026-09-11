@@ -17,36 +17,36 @@ router.get('/', async (req, res) => {
        WHERE tipo='entrada' AND DATE_TRUNC('month', data) = DATE_TRUNC('month', $1::date)`,
       [mesDate]
     ),
-    // Contas pagas no mês
+    // Contas pagas no mês (exclui templates recorrentes)
     pool.query(
       `SELECT COALESCE(SUM(valor), 0) as total FROM contas
        WHERE DATE_TRUNC('month', mes_referencia) = DATE_TRUNC('month', $1::date)
-       AND status = 'paga'`,
+       AND status = 'paga' AND recorrente = false`,
       [mesDate]
     ),
-    // Contas pendentes/atrasadas no mês
+    // Contas pendentes/atrasadas no mês (exclui templates)
     pool.query(
       `SELECT COALESCE(SUM(valor), 0) as total FROM contas
        WHERE DATE_TRUNC('month', mes_referencia) = DATE_TRUNC('month', $1::date)
-       AND status IN ('pendente', 'atrasada')`,
+       AND status IN ('pendente', 'atrasada') AND recorrente = false`,
       [mesDate]
     ),
-    // Contas vencendo nos próximos 7 dias
+    // Contas vencendo nos próximos 7 dias (exclui templates)
     pool.query(
       `SELECT c.*, cat.nome as categoria_nome FROM contas c
        LEFT JOIN categorias cat ON c.categoria_id = cat.id
        WHERE DATE_TRUNC('month', mes_referencia) = DATE_TRUNC('month', $1::date)
-       AND status='pendente'
+       AND status='pendente' AND c.recorrente = false
        AND (MAKE_DATE(EXTRACT(YEAR FROM mes_referencia)::int, EXTRACT(MONTH FROM mes_referencia)::int, dia_vencimento))
            BETWEEN CURRENT_DATE AND CURRENT_DATE + 7`,
       [mesDate]
     ),
-    // Contas atrasadas
+    // Contas atrasadas (exclui templates)
     pool.query(
       `SELECT c.*, cat.nome as categoria_nome FROM contas c
        LEFT JOIN categorias cat ON c.categoria_id = cat.id
        WHERE DATE_TRUNC('month', mes_referencia) = DATE_TRUNC('month', $1::date)
-       AND status='atrasada'`,
+       AND status='atrasada' AND c.recorrente = false`,
       [mesDate]
     ),
     // Histórico mensal de entradas (últimos 6 meses)

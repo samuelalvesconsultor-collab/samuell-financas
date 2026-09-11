@@ -35,7 +35,7 @@ export default function Categorias() {
   const arquivadas = lista.filter(c => c.arquivada)
 
   return (
-    <div className="min-h-screen" style={{ background: '#121212' }}>
+    <div className="min-h-screen" style={{ background: 'var(--surface)' }}>
       <PageHeader titulo="Categorias">
         <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
           <input type="checkbox" checked={mostrarArquivadas} onChange={e => setMostrarArquivadas(e.target.checked)} className="accent-red-600" />
@@ -94,7 +94,7 @@ export default function Categorias() {
           <div className="md:hidden space-y-2 px-4 py-3">
             {ativas.map(c => (
               <div key={c.id} className="rounded-xl p-4 flex items-center justify-between gap-3"
-                style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' }}>
+                style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
                 <div className="min-w-0">
                   <p className="text-white font-medium text-sm truncate">{c.nome}</p>
                   <div className="flex items-center gap-2 mt-1.5">
@@ -112,7 +112,7 @@ export default function Categorias() {
             ))}
             {mostrarArquivadas && arquivadas.map(c => (
               <div key={c.id} className="rounded-xl p-4 flex items-center justify-between gap-3 opacity-40"
-                style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' }}>
+                style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
                 <p className="text-gray-500 line-through text-sm truncate">{c.nome}</p>
                 <button onClick={() => arquivarCategoria(c.id).then(carregar)} className="text-teal-600 hover:text-teal-400 text-xs shrink-0 transition-colors">Restaurar</button>
               </div>

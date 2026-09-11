@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
   const { rows } = await pool.query(
-    `SELECT l.*, c.nome as categoria_nome FROM lancamentos l
+    `SELECT l.*, c.nome as categoria_nome, c.cor as categoria_cor FROM lancamentos l
      LEFT JOIN categorias c ON l.categoria_id = c.id
      ${where} ORDER BY data DESC`,
     params
