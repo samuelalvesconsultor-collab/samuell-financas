@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { getDividas, criarDivida, atualizarDivida, deletarDivida, getParcelas, pagarParcela } from '../api/dividas'
+import { getDividas, criarDivida, atualizarDivida, deletarDivida, getParcelas, pagarParcela, registrarParcela } from '../api/dividas'
 import { getConfiguracoes, patchConfiguracao } from '../api/configuracoes'
 import Modal from '../components/Modal'
 import FormDivida from '../components/FormDivida'
@@ -85,8 +85,24 @@ function Parcelas({ divida, onPagar }) {
 
 function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDragStart, onDragOver, onDrop, onDragEnd }) {
   const [expandido, setExpandido] = useState(false)
+  const [confirmandoPagar, setConfirmandoPagar] = useState(false)
+  const [pagando, setPagando] = useState(false)
+
   const progresso = divida.num_parcelas > 0 ? ((divida.parcelas_pagas || 0) / divida.num_parcelas) * 100 : 0
   const isOver = dragOver === idx
+  const temPendente = divida.ativa && (divida.parcelas_pagas || 0) < divida.num_parcelas
+
+  async function pagarMes(e) {
+    e.stopPropagation()
+    setPagando(true)
+    try {
+      await registrarParcela(divida.id)
+      setConfirmandoPagar(false)
+      onRefresh()
+    } finally {
+      setPagando(false)
+    }
+  }
 
   return (
     <div
@@ -134,12 +150,42 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDrag
           </div>
         </div>
 
+        {/* Saldo devedor discreto */}
+        {Number(divida.saldo_devedor) > 0 && (
+          <div className="flex justify-end mt-2">
+            <span className="text-[10px] tabular-nums" style={{ color: 'rgba(239,68,68,0.55)' }}>
+              saldo devedor {BRL(divida.saldo_devedor)}
+            </span>
+          </div>
+        )}
+
         <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
           <button onClick={() => setExpandido(e => !e)}
             className="text-xs text-gray-500 hover:text-gray-200 transition-colors flex items-center gap-1"
             onMouseDown={e => e.stopPropagation()}>
             {expandido ? '▲' : '▼'} {expandido ? 'Ocultar' : 'Ver'} parcelas
           </button>
+
+          {temPendente && (
+            confirmandoPagar ? (
+              <div className="flex items-center gap-2" onMouseDown={e => e.stopPropagation()}>
+                <span className="text-[11px] text-gray-400">Confirmar?</span>
+                <button onClick={pagarMes} disabled={pagando}
+                  className="text-[11px] text-teal-400 hover:text-teal-300 font-semibold transition-colors">
+                  {pagando ? '...' : 'Sim'}
+                </button>
+                <button onClick={e => { e.stopPropagation(); setConfirmandoPagar(false) }}
+                  className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors">Não</button>
+              </div>
+            ) : (
+              <button onClick={e => { e.stopPropagation(); setConfirmandoPagar(true) }}
+                className="text-xs text-teal-600 hover:text-teal-400 transition-colors"
+                onMouseDown={e => e.stopPropagation()}>
+                Pagar mês
+              </button>
+            )
+          )}
+
           <button onClick={onEdit} className="text-xs text-gray-600 hover:text-gray-300 transition-colors ml-auto"
             onMouseDown={e => e.stopPropagation()}>Editar</button>
           <button onClick={onDelete} className="text-xs text-gray-600 hover:text-red-400 transition-colors"
