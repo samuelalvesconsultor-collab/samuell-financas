@@ -3,8 +3,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans:    ['Arial', 'Helvetica', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['Orbitron', 'sans-serif'],
+        sans:    ['Barlow', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['Barlow Condensed', 'Barlow', 'sans-serif'],
       },
     },
   },
