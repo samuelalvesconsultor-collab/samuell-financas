@@ -1,0 +1,1 @@
+ALTER TABLE dividas ADD COLUMN IF NOT EXISTS forma_pagamento VARCHAR(30) DEFAULT 'boleto';
