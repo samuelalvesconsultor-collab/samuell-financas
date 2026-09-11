@@ -129,7 +129,7 @@ export default function Configuracoes({ onLogout }) {
     <div className="min-h-screen" style={{ background: 'var(--surface)' }}>
       <PageHeader titulo="Configurações" />
 
-      <div className="p-4 md:p-6 space-y-8 max-w-2xl">
+      <div className="p-4 md:p-8 space-y-8 w-full max-w-4xl">
 
         {/* ── Seção 1: Aparência ─────────────────────── */}
         <section>

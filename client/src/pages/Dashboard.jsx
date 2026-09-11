@@ -108,7 +108,7 @@ function GraficoMensal({ titulo, dados, dataKey, cor, gradientId }) {
     <div className="rounded-xl p-4 md:p-5 flex-1 min-w-0 flex flex-col"
       style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
       <p className="text-[10px] font-bold tracking-widest uppercase mb-4" style={{ color: cor }}>{titulo}</p>
-      <ResponsiveContainer width="100%" height={150}>
+      <ResponsiveContainer width="100%" height={220}>
         <BarChart data={dados} barSize={20} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -185,7 +185,7 @@ export default function Dashboard() {
         </button>
       </PageHeader>
 
-      <div className="p-4 md:p-6 space-y-4 md:space-y-5 w-full max-w-5xl">
+      <div className="p-4 md:p-8 space-y-4 md:space-y-6 w-full">
         {!dados ? (
           <p className="text-gray-600 text-sm">Carregando...</p>
         ) : semDados ? (

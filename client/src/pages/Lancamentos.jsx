@@ -208,7 +208,7 @@ export default function Entradas() {
       </PageHeader>
 
       {lista.length > 0 && (
-        <div className="px-4 md:px-6 py-3 md:py-4">
+        <div className="px-4 md:px-8 py-3 md:py-4">
           <div className="rounded-xl px-4 md:px-5 py-4 flex items-center justify-between relative overflow-hidden"
             style={{ background: VERDE_BG, border: `1px solid ${VERDE_BORDER}` }}>
             <div className="absolute inset-0 pointer-events-none opacity-5"
@@ -238,7 +238,7 @@ export default function Entradas() {
           </button>
         </div>
       ) : (
-        <div className="px-4 md:px-6 pb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="px-4 md:px-8 pb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {grupos.map((grupo, idx) => (
             <CategoriaCard
               key={grupo.nome || '__sem__'}

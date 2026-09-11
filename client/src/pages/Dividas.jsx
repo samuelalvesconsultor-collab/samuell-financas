@@ -278,14 +278,14 @@ export default function Dividas() {
       </PageHeader>
 
       {filtroAtiva === 'true' && totalMensal > 0 && (
-        <div className="mx-6 mt-4 rounded-xl px-5 py-4 flex justify-between items-center"
+        <div className="mx-4 md:mx-8 mt-4 rounded-xl px-5 py-4 flex justify-between items-center"
           style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)' }}>
           <span className="text-[10px] text-gray-500 uppercase tracking-widest">Comprometimento mensal</span>
           <span className="font-display font-bold text-red-400 tabular-nums">{BRL(totalMensal)}</span>
         </div>
       )}
 
-      <div className="p-6 space-y-3">
+      <div className="p-4 md:p-8 grid grid-cols-1 xl:grid-cols-2 gap-4">
         {!lista.length
           ? <div className="text-center py-16 text-gray-600 text-sm">Nenhuma dívida encontrada.</div>
           : lista.map((d, idx) => (
