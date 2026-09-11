@@ -44,7 +44,14 @@ function SecaoTitulo({ label }) {
   )
 }
 
-export default function Configuracoes() {
+const LogoutIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+    <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>
+)
+
+export default function Configuracoes({ onLogout }) {
   const { config, atualizarConfig, setCategorias } = useApp()
 
   // --- Cards state ---
@@ -241,7 +248,32 @@ export default function Configuracoes() {
           </div>
         </section>
 
-        {/* ── Seção 3: Categorias ────────────────────── */}
+        {/* ── Seção 3: Conta ────────────────────────── */}
+        {onLogout && (
+          <section>
+            <SecaoTitulo label="Conta" />
+            <div className="rounded-xl p-4 md:p-5" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-white text-sm font-medium">Sair da conta</p>
+                  <p className="text-gray-500 text-xs mt-0.5">Encerra a sessão atual</p>
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.25)', color: '#f87171' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(220,38,38,0.2)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(220,38,38,0.1)'}
+                >
+                  <LogoutIcon />
+                  Sair
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── Seção 4: Categorias ────────────────────── */}
         <section>
           <div className="flex items-center justify-between mb-3">
             <SecaoTitulo label="Categorias" />

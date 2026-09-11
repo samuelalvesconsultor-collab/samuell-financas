@@ -15,15 +15,15 @@ function AppAutenticado({ onLogout }) {
   return (
     <AppProvider>
       <div className="flex min-h-screen" style={{ background: 'var(--surface)' }}>
-        <Nav onLogout={onLogout} />
-        <main className="flex-1 md:ml-52 pb-16 md:pb-0 min-w-0">
+        <Nav />
+        <main className="flex-1 md:ml-14 pb-16 md:pb-0 min-w-0">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/lancamentos" element={<Lancamentos />} />
             <Route path="/contas" element={<Contas />} />
             <Route path="/dividas" element={<Dividas />} />
             <Route path="/categorias" element={<Categorias />} />
-            <Route path="/configuracoes" element={<Configuracoes />} />
+            <Route path="/configuracoes" element={<Configuracoes onLogout={onLogout} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

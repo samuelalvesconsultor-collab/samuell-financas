@@ -185,7 +185,7 @@ export default function Dashboard() {
         </button>
       </PageHeader>
 
-      <div className="p-4 md:p-6 space-y-4 md:space-y-5 max-w-4xl">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-5 w-full max-w-5xl">
         {!dados ? (
           <p className="text-gray-600 text-sm">Carregando...</p>
         ) : semDados ? (
