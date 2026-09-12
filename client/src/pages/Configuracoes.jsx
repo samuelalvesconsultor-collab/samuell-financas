@@ -325,32 +325,7 @@ export default function Configuracoes({ onLogout }) {
           </div>
         </section>
 
-        {/* ── Seção 5: Conta ────────────────────────── */}
-        {onLogout && (
-          <section>
-            <SecaoTitulo label="Conta" />
-            <div className="rounded-xl p-4 md:p-5" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-white text-sm font-medium">Sair da conta</p>
-                  <p className="text-gray-500 text-xs mt-0.5">Encerra a sessão atual</p>
-                </div>
-                <button
-                  onClick={onLogout}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                  style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.25)', color: '#f87171' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(220,38,38,0.2)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(220,38,38,0.1)'}
-                >
-                  <LogoutIcon />
-                  Sair
-                </button>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* ── Seção 6: Categorias ────────────────────── */}
+        {/* ── Seção 5: Categorias ────────────────────── */}
         <section>
           <div className="flex items-center justify-between mb-3">
             <SecaoTitulo label="Categorias" />
@@ -459,6 +434,31 @@ export default function Configuracoes({ onLogout }) {
             </>
           )}
         </section>
+
+        {/* ── Seção 6: Conta (sempre por último) ─────── */}
+        {onLogout && (
+          <section>
+            <SecaoTitulo label="Conta" />
+            <div className="rounded-xl p-4 md:p-5" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>Sair da conta</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-faint)' }}>Encerra a sessão atual</p>
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.25)', color: '#f87171' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(220,38,38,0.2)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(220,38,38,0.1)'}
+                >
+                  <LogoutIcon />
+                  Sair
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
 
       </div>
 
