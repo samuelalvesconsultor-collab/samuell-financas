@@ -32,26 +32,26 @@
 
 html.light {
   color-scheme: light;
-  --bg:             #c8cdd6;
-  --surface:        #d4d9e3;
-  --card:           #e8ecf3;
-  --card-alt:       #dde2ec;
-  --card-border:    rgba(0,0,0,0.14);
-  --text:           #0d1117;
-  --text-2:         #1e293b;
-  --text-muted:     #374151;
-  --text-faint:     #4b5563;
+  --bg:             #e2e8f2;
+  --surface:        #edf1f8;
+  --card:           #cfd8e8;
+  --card-alt:       #c4cedf;
+  --card-border:    rgba(0,0,0,0.2);
+  --text:           #050c1a;
+  --text-2:         #111827;
+  --text-muted:     #1e2d40;
+  --text-faint:     #2d3d52;
   /* glass / structural */
-  --glass-header:   rgba(212,217,227,0.9);
-  --glass-nav:      rgba(200,205,214,0.92);
-  --modal-surface:  rgba(232,236,243,0.98);
+  --glass-header:   rgba(237,241,248,0.9);
+  --glass-nav:      rgba(226,232,242,0.93);
+  --modal-surface:  rgba(220,228,238,0.98);
   --backdrop:       rgba(0,0,0,0.55);
-  --divider:        rgba(0,0,0,0.1);
-  --card-dim:       rgba(0,0,0,0.07);
-  --card-highlight: rgba(0,0,0,0.04);
-  --progress-track: rgba(0,0,0,0.1);
-  --chip-bg:        rgba(0,0,0,0.07);
-  --chip-border:    rgba(0,0,0,0.14);
+  --divider:        rgba(0,0,0,0.12);
+  --card-dim:       rgba(0,0,0,0.08);
+  --card-highlight: rgba(0,0,0,0.05);
+  --progress-track: rgba(0,0,0,0.12);
+  --chip-bg:        rgba(0,0,0,0.08);
+  --chip-border:    rgba(0,0,0,0.18);
 }
 
 /* Transição suave ao trocar tema (como nos celulares) */
@@ -67,15 +67,18 @@ html.light {
 }
 
 /* Overrides light mode para classes Tailwind hardcoded */
-html.light .text-white        { color: #0d1117 !important; }
-html.light .text-gray-300     { color: #374151 !important; }
-html.light .text-gray-400     { color: #4b5563 !important; }
-html.light .text-gray-500     { color: #4b5563 !important; }
-html.light .text-gray-600     { color: #374151 !important; }
-html.light .table-row         { border-top-color: rgba(0,0,0,0.1) !important; }
-html.light .table-row:hover   { background-color: rgba(0,0,0,0.04) !important; }
-html.light .th                { color: #4b5563 !important; }
-html.light .td                { color: #0d1117; }
+html.light .text-white        { color: #050c1a !important; }
+html.light .text-gray-300     { color: #1e2d40 !important; }
+html.light .text-gray-400     { color: #2d3d52 !important; }
+html.light .text-gray-500     { color: #2d3d52 !important; }
+html.light .text-gray-600     { color: #1e2d40 !important; }
+html.light .text-orange-400   { color: #b45309 !important; }
+html.light .text-teal-400     { color: #0d6e68 !important; }
+html.light .text-red-400      { color: #b91c1c !important; }
+html.light .table-row         { border-top-color: rgba(0,0,0,0.12) !important; }
+html.light .table-row:hover   { background-color: rgba(0,0,0,0.05) !important; }
+html.light .th                { color: #2d3d52 !important; }
+html.light .td                { color: #050c1a; }
 
 @layer base {
   html {
