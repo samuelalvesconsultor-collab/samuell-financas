@@ -283,7 +283,7 @@ export default function Entradas() {
         </Modal>
       )}
 
-      <FABButton cor="#00e676" onClick={() => setModal('novo')} />
+      <FABButton cor="#00e676" onClick={() => setModal('novo')} posicao="center" />
     </div>
   )
 }

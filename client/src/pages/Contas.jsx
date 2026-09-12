@@ -441,7 +441,7 @@ export default function Contas() {
         </Modal>
       )}
 
-      <FABButton cor="#ff1744" onClick={() => setModal('novo')} />
+      <FABButton cor="#ff1744" onClick={() => setModal('novo')} posicao="center" />
     </div>
   )
 }

@@ -15,7 +15,7 @@ export default function FAB() {
 
   return (
     <>
-      <FABButton cor="#dc2626" onClick={() => setOpen(true)} />
+      <FABButton cor="#dc2626" onClick={() => setOpen(true)} posicao="center" />
       {open && (
         <Modal titulo="NOVO GASTO" onClose={() => setOpen(false)}>
           <FormGasto onSalvar={salvar} onCancelar={() => setOpen(false)} />
