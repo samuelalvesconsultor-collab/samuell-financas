@@ -272,10 +272,6 @@ export default function Dividas() {
           <option value="false">Quitadas</option>
           <option value="">Todas</option>
         </select>
-        <button onClick={() => setModal('novo')} className="btn-action text-xs md:text-sm px-3 md:px-4">
-          <span className="text-base md:text-lg leading-none">+</span>
-          <span className="hidden sm:inline">Nova</span>
-        </button>
       </PageHeader>
 
       {filtroAtiva === 'true' && totalMensal > 0 && (

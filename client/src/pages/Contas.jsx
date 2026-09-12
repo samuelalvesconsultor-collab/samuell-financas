@@ -329,10 +329,6 @@ export default function Contas() {
     <div className="min-h-screen" style={{ background: 'var(--surface)' }}>
       <PageHeader titulo="Contas">
         <MonthPicker />
-        <button onClick={() => setModal('novo')} className="btn-action text-xs md:text-sm px-3 md:px-4">
-          <span className="text-base md:text-lg leading-none">+</span>
-          <span className="hidden sm:inline">Nova</span>
-        </button>
       </PageHeader>
 
       {lista.length > 0 && (

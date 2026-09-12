@@ -207,10 +207,6 @@ export default function Entradas() {
       <PageHeader titulo="Entradas">
         <MonthPicker />
         <button onClick={exportarCSV} className="btn-outline hidden sm:flex">Exportar CSV</button>
-        <button onClick={() => setModal('novo')} className="btn-action text-xs md:text-sm px-3 md:px-4">
-          <span className="text-base md:text-lg leading-none">+</span>
-          <span className="hidden sm:inline">Nova</span>
-        </button>
       </PageHeader>
 
       {lista.length > 0 && (
