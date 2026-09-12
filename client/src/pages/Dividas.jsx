@@ -93,6 +93,12 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDrag
   const isOver = dragOver === idx
   const temPendente = divida.ativa && (divida.parcelas_pagas || 0) < divida.num_parcelas
 
+  // Verde quando o mês atual já foi pago — volta ao branco quando vira o mês
+  const hoje = new Date()
+  const mesHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`
+  const mesProxVenc = divida.proxima_vencimento ? divida.proxima_vencimento.slice(0, 7) : null
+  const mesPago = divida.parcelas_pagas > 0 && (mesProxVenc === null || mesProxVenc > mesHoje)
+
   async function pagarMes(e) {
     e.stopPropagation()
     setPagando(true)
@@ -134,7 +140,11 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDrag
           </div>
           <div className="text-right shrink-0 ml-3">
             <p className="text-[10px] text-gray-600 uppercase tracking-wide mb-0.5">Parcela</p>
-            <p className="text-white font-bold tabular-nums">{BRL(divida.valor_parcela)}</p>
+            <p className="font-bold tabular-nums" style={mesPago
+              ? { color: '#22c55e', textShadow: '0 0 10px rgba(34,197,94,0.35)' }
+              : { color: 'var(--text)' }}>
+              {BRL(divida.valor_parcela)}
+            </p>
             {divida.proxima_vencimento && (
               <p className="text-[10px] text-gray-600 mt-0.5">vence {fmtDate(divida.proxima_vencimento)}</p>
             )}
