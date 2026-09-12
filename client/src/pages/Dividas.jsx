@@ -309,7 +309,7 @@ export default function Dividas() {
         </Modal>
       )}
 
-      <FABButton cor="#ef4444" onClick={() => setModal('novo')} posicao="center" scrollAware />
+      <FABButton cor="#ef4444" onClick={() => setModal('novo')} posicao="center" />
     </div>
   )
 }
