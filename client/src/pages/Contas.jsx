@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { getContas, criarConta, atualizarConta, deletarConta, pagarConta } from '../api/contas'
 import { getConfiguracoes, patchConfiguracao } from '../api/configuracoes'
+import { getDashboard } from '../api/dashboard'
 import Modal from '../components/Modal'
 import FormConta from '../components/FormConta'
 import StatusBadge from '../components/StatusBadge'
 import CategoryBadge from '../components/CategoryBadge'
 import MonthPicker from '../components/MonthPicker'
 import PageHeader from '../components/PageHeader'
+import GraficoMensal from '../components/GraficoMensal'
 
 const BRL = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -175,6 +177,7 @@ export default function Contas() {
   const [confirmPagar, setConfirmPagar] = useState(null)
   const [excluirRec, setExcluirRec]     = useState(null)
   const [dragOver, setDragOver]         = useState(null)
+  const [historico, setHistorico]       = useState([])
   const dragIdx    = useRef(null)
   const ordemSalva = useRef([])
 
@@ -182,11 +185,13 @@ export default function Contas() {
     Promise.all([
       getContas(mesSelecionado),
       getConfiguracoes(),
-    ]).then(([contas, cfg]) => {
+      getDashboard(mesSelecionado),
+    ]).then(([contas, cfg, dash]) => {
       const ordem = cfg.ordem_grupos_contas ?? []
       ordemSalva.current = ordem
       setLista(contas)
       setGrupos(aplicarOrdem(agruparPorCategoria(contas), ordem))
+      setHistorico(dash.historico_mensal || [])
     })
   }, [mesSelecionado])
 
@@ -266,22 +271,37 @@ export default function Contas() {
 
       {lista.length > 0 && (
         <div className="px-4 md:px-8 py-3 md:py-4">
-          <div className="rounded-xl px-4 md:px-5 py-4 flex items-center justify-between relative overflow-hidden"
-            style={{ background: VERM_BG, border: `1px solid ${VERM_BORDER}` }}>
-            <div className="absolute inset-0 pointer-events-none opacity-5"
-              style={{ background: 'radial-gradient(circle at 10% 50%, #ff1744, transparent 60%)' }} />
-            <div>
-              <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: VERM }}>Total do Mês</p>
-              <div className="h-0.5 w-5 rounded-full mb-2" style={{ background: VERM }} />
-              <p className="font-display text-lg md:text-xl font-bold tabular-nums"
-                style={{ color: VERM, textShadow: '0 0 16px rgba(255,23,68,0.4)' }}>
-                {BRL(total)}
-              </p>
+          <div className="flex flex-col md:flex-row gap-4 items-stretch">
+            {/* Card total — fixo no desktop, full-width no mobile */}
+            <div className="rounded-xl px-4 md:px-5 py-4 relative overflow-hidden md:w-64 shrink-0"
+              style={{ background: VERM_BG, border: `1px solid ${VERM_BORDER}` }}>
+              <div className="absolute inset-0 pointer-events-none opacity-5"
+                style={{ background: 'radial-gradient(circle at 10% 50%, #ff1744, transparent 60%)' }} />
+              <div className="flex md:flex-col justify-between md:justify-start h-full">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: VERM }}>Total do Mês</p>
+                  <div className="h-0.5 w-5 rounded-full mb-2" style={{ background: VERM }} />
+                  <p className="font-display text-lg md:text-2xl font-bold tabular-nums"
+                    style={{ color: VERM, textShadow: '0 0 16px rgba(255,23,68,0.4)' }}>
+                    {BRL(total)}
+                  </p>
+                </div>
+                <div className="md:mt-4 text-right md:text-left">
+                  <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: VERM }}>Registros</p>
+                  <p className="text-xl md:text-2xl font-bold" style={{ color: VERM }}>{lista.length}</p>
+                </div>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: VERM }}>Registros</p>
-              <p className="text-xl md:text-2xl font-bold" style={{ color: VERM }}>{lista.length}</p>
-            </div>
+            {/* Gráfico — ao lado no desktop, abaixo no mobile */}
+            {historico.length > 0 && (
+              <GraficoMensal
+                titulo="Saídas Mensais"
+                dados={historico}
+                dataKey="saidas"
+                cor={VERM}
+                gradientId="gradSaidasPage"
+              />
+            )}
           </div>
         </div>
       )}

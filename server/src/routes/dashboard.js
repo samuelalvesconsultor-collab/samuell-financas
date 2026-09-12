@@ -31,12 +31,32 @@ router.get('/', async (req, res) => {
        AND status IN ('pendente', 'atrasada') AND recorrente = false`,
       [mesDate]
     ),
-    // Todas as contas pendentes/em aberto do mês (exclui templates)
+    // Contas em aberto: pendentes do mês + templates recorrentes sem instância paga/pendente no mês
     pool.query(
-      `SELECT c.*, cat.nome as categoria_nome FROM contas c
+      `SELECT c.id, c.descricao, c.valor, c.dia_vencimento, c.mes_referencia,
+              c.status, c.categoria_id, c.recorrente, c.conta_pai_id, c.cartao_vinculado,
+              cat.nome as categoria_nome
+       FROM contas c
        LEFT JOIN categorias cat ON c.categoria_id = cat.id
-       WHERE DATE_TRUNC('month', mes_referencia) = DATE_TRUNC('month', $1::date)
-       AND status='pendente' AND c.recorrente = false
+       WHERE DATE_TRUNC('month', c.mes_referencia) = DATE_TRUNC('month', $1::date)
+         AND c.status = 'pendente' AND c.recorrente = false
+
+       UNION ALL
+
+       SELECT c.id, c.descricao, c.valor, c.dia_vencimento, $1::date as mes_referencia,
+              'pendente' as status, c.categoria_id, true as recorrente, null as conta_pai_id, c.cartao_vinculado,
+              cat.nome as categoria_nome
+       FROM contas c
+       LEFT JOIN categorias cat ON c.categoria_id = cat.id
+       WHERE c.recorrente = true AND c.conta_pai_id IS NULL
+         AND DATE_TRUNC('month', c.mes_referencia) <= DATE_TRUNC('month', $1::date)
+         AND NOT EXISTS (
+           SELECT 1 FROM contas inst
+           WHERE inst.conta_pai_id = c.id
+             AND DATE_TRUNC('month', inst.mes_referencia) = DATE_TRUNC('month', $1::date)
+             AND inst.status IN ('paga', 'pendente')
+         )
+
        ORDER BY dia_vencimento ASC`,
       [mesDate]
     ),
