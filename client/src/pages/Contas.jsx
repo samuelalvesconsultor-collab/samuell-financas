@@ -174,7 +174,9 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onD
             </div>
             <div className="text-right shrink-0">
               <p className="text-xs font-bold tabular-nums"
-                style={{ color: VERM, textShadow: '0 0 10px rgba(255,23,68,0.3)' }}>
+                style={c.status === 'paga'
+                  ? { color: '#22c55e', textShadow: '0 0 10px rgba(34,197,94,0.35)' }
+                  : { color: VERM,      textShadow: '0 0 10px rgba(255,23,68,0.3)'  }}>
                 -{BRL(c.valor)}
               </p>
               <div className="flex items-center gap-2 justify-end mt-1">
