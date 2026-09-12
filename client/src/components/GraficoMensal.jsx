@@ -29,23 +29,25 @@ export default function GraficoMensal({ titulo, dados, dataKey, cor, gradientId 
           {titulo}
         </p>
       )}
-      <div className="flex-1">
-        <ResponsiveContainer width="100%" height={160}>
-          <BarChart data={dados} barSize={16} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={cor} stopOpacity={0.9} />
-                <stop offset="100%" stopColor={cor} stopOpacity={0.2} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.04)" />
-            <XAxis dataKey="mes" tickFormatter={mesLabel} tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false}
-              tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-            <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-            <Bar dataKey={dataKey} fill={`url(#${id})`} radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="flex-1 overflow-x-auto">
+        <div style={{ minWidth: 420 }}>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={dados} barSize={10} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={cor} stopOpacity={0.9} />
+                  <stop offset="100%" stopColor={cor} stopOpacity={0.2} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.04)" />
+              <XAxis dataKey="mes" tickFormatter={mesLabel} tick={{ fill: '#6b7280', fontSize: 9 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#6b7280', fontSize: 9 }} axisLine={false} tickLine={false}
+                tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+              <Bar dataKey={dataKey} fill={`url(#${id})`} radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
       <div className="mt-3 pt-3 flex items-center justify-between"
         style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>

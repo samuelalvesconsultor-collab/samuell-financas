@@ -68,31 +68,33 @@ router.get('/', async (req, res) => {
        AND status='atrasada' AND c.recorrente = false`,
       [mesDate]
     ),
-    // Histórico mensal de entradas (últimos 6 meses)
+    // Histórico mensal de entradas (ano inteiro do mês selecionado)
     pool.query(
       `SELECT TO_CHAR(m.mes, 'YYYY-MM') as mes,
               COALESCE(SUM(l.valor::numeric), 0) as total
        FROM generate_series(
-         DATE_TRUNC('month', NOW()) - INTERVAL '5 months',
-         DATE_TRUNC('month', NOW()),
+         DATE_TRUNC('year', $1::date),
+         DATE_TRUNC('year', $1::date) + INTERVAL '11 months',
          '1 month'::interval
        ) as m(mes)
        LEFT JOIN lancamentos l
          ON DATE_TRUNC('month', l.data) = m.mes AND l.tipo = 'entrada'
-       GROUP BY m.mes ORDER BY m.mes`
+       GROUP BY m.mes ORDER BY m.mes`,
+      [mesDate]
     ),
-    // Histórico mensal de saídas — contas pagas (últimos 6 meses)
+    // Histórico mensal de saídas — contas pagas (ano inteiro do mês selecionado)
     pool.query(
       `SELECT TO_CHAR(m.mes, 'YYYY-MM') as mes,
               COALESCE(SUM(c.valor::numeric), 0) as total
        FROM generate_series(
-         DATE_TRUNC('month', NOW()) - INTERVAL '5 months',
-         DATE_TRUNC('month', NOW()),
+         DATE_TRUNC('year', $1::date),
+         DATE_TRUNC('year', $1::date) + INTERVAL '11 months',
          '1 month'::interval
        ) as m(mes)
        LEFT JOIN contas c
          ON DATE_TRUNC('month', c.mes_referencia) = m.mes AND c.status = 'paga'
-       GROUP BY m.mes ORDER BY m.mes`
+       GROUP BY m.mes ORDER BY m.mes`,
+      [mesDate]
     ),
   ])
 
