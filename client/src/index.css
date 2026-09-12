@@ -100,6 +100,17 @@ html.light .table-row:hover   { background-color: rgba(0,0,0,0.02) !important; }
 html.light .th                { color: #64748b !important; }
 html.light .td                { color: #0f172a; }
 
+/* Esconde scrollbar no mobile mantendo o scroll funcional */
+@media (max-width: 768px) {
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @layer base {
   html {
     overflow-x: hidden;
