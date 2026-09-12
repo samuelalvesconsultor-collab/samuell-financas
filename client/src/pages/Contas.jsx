@@ -4,6 +4,7 @@ import { getContas, criarConta, atualizarConta, deletarConta, pagarConta } from 
 import { getConfiguracoes, patchConfiguracao } from '../api/configuracoes'
 import { getDashboard } from '../api/dashboard'
 import { getGastos, deletarGasto } from '../api/gastos'
+import { CORES_STATUS_DEFAULT, CORES_FORMA_DEFAULT } from '../context/AppContext'
 import Modal from '../components/Modal'
 import FormConta from '../components/FormConta'
 import StatusBadge from '../components/StatusBadge'
@@ -34,6 +35,33 @@ const RecBadge = ({ cartao }) => (
     {cartao || 'Recorrente'}
   </span>
 )
+
+const TIPO_LABEL = { avista: 'À vista', parcelado: 'Parcelado', recorrente: 'Recorrente' }
+const FORMA_LABEL = { credito: 'Crédito', boleto: 'Boleto', pix: 'PIX' }
+
+function TipoBadge({ tipo, cores }) {
+  const label = TIPO_LABEL[tipo]
+  const cor = cores?.[tipo] || CORES_STATUS_DEFAULT[tipo] || '#6b7280'
+  if (!label) return null
+  return (
+    <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+      style={{ background: `${cor}22`, border: `1px solid ${cor}44`, color: cor }}>
+      {label}
+    </span>
+  )
+}
+
+function FormaBadge({ forma, cores }) {
+  const label = FORMA_LABEL[forma]
+  const cor = cores?.[forma] || CORES_FORMA_DEFAULT[forma] || '#6b7280'
+  if (!label) return null
+  return (
+    <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+      style={{ background: `${cor}22`, border: `1px solid ${cor}44`, color: cor }}>
+      {label}
+    </span>
+  )
+}
 
 const GripIcon = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
@@ -93,7 +121,7 @@ function aplicarOrdem(grupos, ordemSalva) {
   })
 }
 
-function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onDragStart, onDragOver, onDrop, onDragEnd }) {
+function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, coresStatus, coresForma }) {
   const { nome, cor: corSalva, itens } = grupo
   const total = itens.reduce((s, c) => s + Number(c.valor), 0)
   const cor   = corCategoria(nome, corSalva)
@@ -133,9 +161,11 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onD
                 <span className="text-xs font-medium truncate" style={{ color: 'var(--text)' }}>{c.descricao}</span>
                 {c.conta_pai_id && <RecBadge cartao={c.cartao_vinculado} />}
               </div>
-              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>Dia {c.dia_vencimento}</span>
                 <StatusBadge status={c.status} />
+                {c.tipo_pagamento && <TipoBadge tipo={c.tipo_pagamento} cores={coresStatus} />}
+                {c.forma_pagamento && <FormaBadge forma={c.forma_pagamento} cores={coresForma} />}
               </div>
             </div>
             <div className="text-right shrink-0">
@@ -226,7 +256,7 @@ function GastosSection({ gastos, onExcluir }) {
 }
 
 export default function Contas() {
-  const { mesSelecionado } = useApp()
+  const { mesSelecionado, config } = useApp()
   const [lista, setLista]               = useState([])
   const [grupos, setGrupos]             = useState([])
   const [modal, setModal]               = useState(null)
@@ -391,6 +421,8 @@ export default function Contas() {
               onPagar={setConfirmPagar}
               onEditar={setModal}
               onExcluir={excluir}
+              coresStatus={config?.badge_status_cores}
+              coresForma={config?.badge_forma_cores}
             />
           ))}
         </div>

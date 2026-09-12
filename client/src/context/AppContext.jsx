@@ -4,6 +4,9 @@ import { fetchAuth } from '../api/client'
 
 const AppContext = createContext()
 
+export const CORES_STATUS_DEFAULT = { avista: '#14b8a6', parcelado: '#f97316', recorrente: '#8b5cf6' }
+export const CORES_FORMA_DEFAULT  = { credito: '#3b82f6', boleto: '#f59e0b', pix: '#10b981' }
+
 const CARDS_PADRAO = [
   { id: 'entrada_mes',      titulo: 'Entrada do Mês',    visivel: true, ordem: 0 },
   { id: 'contas_pagas',     titulo: 'Contas Pagas',      visivel: true, ordem: 1 },
@@ -34,6 +37,8 @@ export function AppProvider({ children }) {
           dashboard_cards: Array.isArray(data.dashboard_cards) && data.dashboard_cards.length > 0
             ? data.dashboard_cards
             : CARDS_PADRAO,
+          badge_status_cores: data.badge_status_cores || CORES_STATUS_DEFAULT,
+          badge_forma_cores:  data.badge_forma_cores  || CORES_FORMA_DEFAULT,
         }))
       })
       .catch(() => {})

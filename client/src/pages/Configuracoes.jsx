@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useApp } from '../context/AppContext'
+import { useApp, CORES_STATUS_DEFAULT, CORES_FORMA_DEFAULT } from '../context/AppContext'
 import { getCategorias, criarCategoria, atualizarCategoria, arquivarCategoria } from '../api/categorias'
 import Modal from '../components/Modal'
 import FormCategoria from '../components/FormCategoria'
@@ -248,7 +248,84 @@ export default function Configuracoes({ onLogout }) {
           </div>
         </section>
 
-        {/* ── Seção 3: Conta ────────────────────────── */}
+        {/* ── Seção 3: Cores dos Indicadores ─────────── */}
+        <section>
+          <SecaoTitulo label="Cores dos Indicadores" />
+          <div className="space-y-4">
+            {/* Status */}
+            <div className="rounded-xl p-4 md:p-5" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
+              <p className="text-xs font-semibold text-gray-400 mb-3">Status de pagamento</p>
+              <div className="space-y-3">
+                {[
+                  { key: 'avista',    label: 'À vista'    },
+                  { key: 'parcelado', label: 'Parcelado'  },
+                  { key: 'recorrente',label: 'Recorrente' },
+                ].map(({ key, label }) => {
+                  const coresAtual = config.badge_status_cores || CORES_STATUS_DEFAULT
+                  const cor = coresAtual[key] || CORES_STATUS_DEFAULT[key]
+                  return (
+                    <div key={key} className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+                          style={{ background: `${cor}22`, border: `1px solid ${cor}44`, color: cor }}>
+                          {label}
+                        </span>
+                      </div>
+                      <input
+                        type="color"
+                        value={cor}
+                        onChange={e => {
+                          const nova = { ...coresAtual, [key]: e.target.value }
+                          atualizarConfig('badge_status_cores', nova)
+                        }}
+                        className="w-8 h-8 rounded cursor-pointer border-0 p-0.5"
+                        style={{ background: 'var(--card-alt)' }}
+                        title={`Cor: ${label}`}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+            {/* Forma de pagamento */}
+            <div className="rounded-xl p-4 md:p-5" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
+              <p className="text-xs font-semibold text-gray-400 mb-3">Forma de pagamento</p>
+              <div className="space-y-3">
+                {[
+                  { key: 'credito', label: 'Crédito' },
+                  { key: 'boleto',  label: 'Boleto'  },
+                  { key: 'pix',     label: 'PIX'     },
+                ].map(({ key, label }) => {
+                  const coresAtual = config.badge_forma_cores || CORES_FORMA_DEFAULT
+                  const cor = coresAtual[key] || CORES_FORMA_DEFAULT[key]
+                  return (
+                    <div key={key} className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+                          style={{ background: `${cor}22`, border: `1px solid ${cor}44`, color: cor }}>
+                          {label}
+                        </span>
+                      </div>
+                      <input
+                        type="color"
+                        value={cor}
+                        onChange={e => {
+                          const nova = { ...coresAtual, [key]: e.target.value }
+                          atualizarConfig('badge_forma_cores', nova)
+                        }}
+                        className="w-8 h-8 rounded cursor-pointer border-0 p-0.5"
+                        style={{ background: 'var(--card-alt)' }}
+                        title={`Cor: ${label}`}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Seção 5: Conta ────────────────────────── */}
         {onLogout && (
           <section>
             <SecaoTitulo label="Conta" />
@@ -273,7 +350,7 @@ export default function Configuracoes({ onLogout }) {
           </section>
         )}
 
-        {/* ── Seção 4: Categorias ────────────────────── */}
+        {/* ── Seção 6: Categorias ────────────────────── */}
         <section>
           <div className="flex items-center justify-between mb-3">
             <SecaoTitulo label="Categorias" />

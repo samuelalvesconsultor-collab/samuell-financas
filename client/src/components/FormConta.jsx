@@ -1,20 +1,10 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 
-const RecIcone = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="17 1 21 5 17 9"/>
-    <path d="M3 11V9a4 4 0 014-4h14"/>
-    <polyline points="7 23 3 19 7 15"/>
-    <path d="M21 13v2a4 4 0 01-4 4H3"/>
-  </svg>
-)
-
-function getStatusUI(conta) {
-  if (!conta) return 'pendente'
-  if (conta.recorrente) return 'recorrente'
-  if (conta.status === 'paga') return 'paga'
-  return 'pendente'
+function getTipoPagamento(inicial) {
+  if (!inicial) return 'avista'
+  if (inicial.recorrente || inicial.tipo_pagamento === 'recorrente') return 'recorrente'
+  return inicial.tipo_pagamento || 'avista'
 }
 
 export default function FormConta({ inicial, onSalvar, onCancelar }) {
@@ -25,49 +15,55 @@ export default function FormConta({ inicial, onSalvar, onCancelar }) {
     : new Date().toISOString().slice(0, 7) + '-01'
 
   const [form, setForm] = useState({
-    descricao:      inicial?.descricao      || '',
-    valor:          inicial?.valor          || '',
-    dia_vencimento: inicial?.dia_vencimento || '',
-    categoria_id:   inicial?.categoria_id   || '',
-    mes_referencia: inicial?.mes_referencia || mesRef,
-    status_ui:      getStatusUI(inicial),
+    descricao:       inicial?.descricao       || '',
+    valor:           inicial?.valor           || '',
+    dia_vencimento:  inicial?.dia_vencimento  || '',
+    tipo_pagamento:  getTipoPagamento(inicial),
+    categoria_id:    inicial?.categoria_id    || '',
+    forma_pagamento: inicial?.forma_pagamento || 'boleto',
+    num_parcelas:    inicial?.num_parcelas    || '',
+    cartao_vinculado: inicial?.cartao_vinculado || 'Santander',
+    mes_referencia:  inicial?.mes_referencia  || mesRef,
   })
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
-  // cats precisa vir antes de catSelecionada
   const cats = categorias.filter(c => !c.arquivada)
+  const isRec = form.tipo_pagamento === 'recorrente'
+  const isParc = form.tipo_pagamento === 'parcelado'
+  const isCredito = form.forma_pagamento === 'credito'
+  const ehInstancia = !!(inicial?.conta_pai_id)
 
-  const ehInstancia      = !!(inicial?.conta_pai_id)
-  const isRec            = form.status_ui === 'recorrente'
-  const catSelecionada   = cats.find(c => String(c.id) === String(form.categoria_id))
-  const ehAssinatura     = catSelecionada?.nome?.toLowerCase().includes('assinatura') ?? false
-  const mostrarSantander = isRec && ehAssinatura
-
-  const STATUS_OPTS = [
-    { val: 'pendente',   label: 'Pendente',    desc: 'Aguardando pagamento' },
-    { val: 'paga',       label: 'Paga',        desc: 'Já quitada'           },
-    ...(!ehInstancia ? [{ val: 'recorrente', label: 'Recorrente', desc: 'Débito automático', icone: <RecIcone /> }] : []),
+  const TIPO_OPTS = [
+    { val: 'avista',    label: 'À vista',   desc: 'Pagamento único' },
+    { val: 'parcelado', label: 'Parcelado', desc: 'Em parcelas'     },
+    ...(!ehInstancia ? [{ val: 'recorrente', label: 'Recorrente', desc: 'Todo mês' }] : []),
   ]
 
   function submit(e) {
     e.preventDefault()
     const payload = {
-      descricao:      form.descricao,
-      valor:          parseFloat(form.valor),
-      dia_vencimento: parseInt(form.dia_vencimento),
-      categoria_id:   form.categoria_id || null,
-      mes_referencia: form.mes_referencia,
+      descricao:       form.descricao,
+      valor:           parseFloat(form.valor),
+      dia_vencimento:  parseInt(form.dia_vencimento),
+      categoria_id:    form.categoria_id || null,
+      mes_referencia:  form.mes_referencia,
+      tipo_pagamento:  form.tipo_pagamento,
     }
 
     if (isRec) {
       payload.recorrente       = true
       payload.status           = 'pendente'
-      payload.cartao_vinculado = mostrarSantander ? 'Santander' : null
+      payload.forma_pagamento  = form.forma_pagamento
+      payload.cartao_vinculado = isCredito ? form.cartao_vinculado : null
     } else {
       payload.recorrente       = false
-      payload.status           = form.status_ui
-      payload.cartao_vinculado = null
+      payload.status           = 'pendente'
+      payload.forma_pagamento  = form.forma_pagamento
+      if (isParc && form.num_parcelas) {
+        payload.num_parcelas   = parseInt(form.num_parcelas)
+        payload.cartao_vinculado = isCredito ? form.cartao_vinculado : null
+      }
     }
 
     onSalvar(payload)
@@ -79,10 +75,11 @@ export default function FormConta({ inicial, onSalvar, onCancelar }) {
       {/* Nome */}
       <input
         required
-        placeholder="Nome"
+        placeholder="Nome da conta"
         value={form.descricao}
         onChange={e => set('descricao', e.target.value)}
         className="input-dark"
+        autoFocus
       />
 
       {/* Valor + Dia vencimento */}
@@ -103,19 +100,19 @@ export default function FormConta({ inicial, onSalvar, onCancelar }) {
         />
       </div>
 
-      {/* Status — seletor visual */}
+      {/* Status / Tipo */}
       <div>
         <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--text-faint)' }}>
           Status
         </p>
-        <div className={`grid gap-2 ${STATUS_OPTS.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
-          {STATUS_OPTS.map(opt => {
-            const ativo = form.status_ui === opt.val
+        <div className={`grid gap-2 ${TIPO_OPTS.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          {TIPO_OPTS.map(opt => {
+            const ativo = form.tipo_pagamento === opt.val
             return (
               <button
                 key={opt.val}
                 type="button"
-                onClick={() => set('status_ui', opt.val)}
+                onClick={() => set('tipo_pagamento', opt.val)}
                 className="rounded-xl p-3 text-left transition-all duration-150"
                 style={{
                   background: ativo ? 'rgba(220,38,38,0.1)' : 'var(--card-alt)',
@@ -123,24 +120,19 @@ export default function FormConta({ inicial, onSalvar, onCancelar }) {
                   boxShadow: ativo ? '0 0 0 2px rgba(220,38,38,0.12)' : 'none',
                 }}
               >
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  {opt.icone && (
-                    <span style={{ color: ativo ? '#dc2626' : 'var(--text-faint)' }}>{opt.icone}</span>
-                  )}
-                  <span className="text-xs font-semibold" style={{ color: ativo ? '#ffffff' : 'var(--text-muted)' }}>
-                    {opt.label}
-                  </span>
-                </div>
-                <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>
+                <p className="text-xs font-semibold" style={{ color: ativo ? '#ffffff' : 'var(--text-muted)' }}>
+                  {opt.label}
+                </p>
+                <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-faint)' }}>
                   {opt.desc}
-                </span>
+                </p>
               </button>
             )
           })}
         </div>
       </div>
 
-      {/* Categoria — vem antes do aviso Santander para que a seleção seja visível */}
+      {/* Categoria */}
       <select
         value={form.categoria_id}
         onChange={e => set('categoria_id', e.target.value)}
@@ -150,21 +142,70 @@ export default function FormConta({ inicial, onSalvar, onCancelar }) {
         {cats.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
       </select>
 
-      {/* Aviso Santander: só quando Recorrente + Assinaturas */}
-      {mostrarSantander && (
-        <div
-          className="rounded-xl px-4 py-3 flex items-center gap-3"
-          style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.22)' }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
-          </svg>
-          <div>
-            <p className="text-xs text-white font-medium">Cartão Santander vinculado automaticamente</p>
-            <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-faint)' }}>
-              Gera uma ocorrência pendente em cada mês automaticamente.
-            </p>
-          </div>
+      {/* Forma de pagamento */}
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--text-faint)' }}>
+          Forma de pagamento
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { val: 'credito', label: 'Crédito' },
+            { val: 'boleto',  label: 'Boleto'  },
+            { val: 'pix',     label: 'PIX'     },
+          ].map(opt => {
+            const ativo = form.forma_pagamento === opt.val
+            return (
+              <button
+                key={opt.val}
+                type="button"
+                onClick={() => set('forma_pagamento', opt.val)}
+                className="rounded-xl py-2.5 text-center text-xs font-semibold transition-all duration-150"
+                style={{
+                  background: ativo ? 'rgba(220,38,38,0.1)' : 'var(--card-alt)',
+                  border: `1.5px solid ${ativo ? '#dc2626' : 'var(--card-border)'}`,
+                  color: ativo ? '#ffffff' : 'var(--text-muted)',
+                }}
+              >
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Campos condicionais: Parcelado */}
+      {isParc && (
+        <div>
+          <label className="text-[10px] font-semibold uppercase tracking-widest mb-1 block" style={{ color: 'var(--text-faint)' }}>
+            Número de parcelas
+          </label>
+          <input
+            required
+            type="number"
+            min="2"
+            max="120"
+            placeholder="Ex: 12"
+            value={form.num_parcelas}
+            onChange={e => set('num_parcelas', e.target.value)}
+            className="input-dark"
+          />
+        </div>
+      )}
+
+      {/* Cartão: só quando Parcelado + Crédito, OU Recorrente + Crédito */}
+      {isCredito && (isParc || isRec) && (
+        <div>
+          <label className="text-[10px] font-semibold uppercase tracking-widest mb-1 block" style={{ color: 'var(--text-faint)' }}>
+            Qual cartão?
+          </label>
+          <select
+            value={form.cartao_vinculado}
+            onChange={e => set('cartao_vinculado', e.target.value)}
+            className="select-dark"
+          >
+            <option value="Santander">Santander</option>
+            <option value="Mercado Pago">Mercado Pago</option>
+          </select>
         </div>
       )}
 
