@@ -3,7 +3,7 @@ import { login, register } from '../api/auth'
 
 export default function Login({ onLogin }) {
   const [modo, setModo]       = useState('login') // 'login' | 'register'
-  const [email, setEmail]     = useState('')
+  const [email, setEmail]     = useState(() => localStorage.getItem('samuell_email') || '')
   const [senha, setSenha]     = useState('')
   const [erro, setErro]       = useState('')
   const [loading, setLoading] = useState(false)
@@ -16,6 +16,7 @@ export default function Login({ onLogin }) {
       const data = modo === 'login'
         ? await login(email, senha)
         : await register(email, senha)
+      localStorage.setItem('samuell_email', data.email)
       onLogin(data.email)
     } catch (err) {
       setErro(err.message)

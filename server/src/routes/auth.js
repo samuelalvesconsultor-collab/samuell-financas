@@ -19,7 +19,7 @@ router.post('/login', async (req, res) => {
   const ok = await bcrypt.compare(password, user.password_hash)
   if (!ok) return res.status(401).json({ error: 'Credenciais inválidas' })
 
-  const token = jwt.sign({ id: user.id, email: user.email }, SECRET(), { expiresIn: '30d' })
+  const token = jwt.sign({ id: user.id, email: user.email }, SECRET(), { expiresIn: '365d' })
   res.json({ token, email: user.email })
 })
 
@@ -38,7 +38,7 @@ router.post('/register', async (req, res) => {
     'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email',
     [email.toLowerCase(), hash]
   )
-  const token = jwt.sign({ id: rows[0].id, email: rows[0].email }, SECRET(), { expiresIn: '30d' })
+  const token = jwt.sign({ id: rows[0].id, email: rows[0].email }, SECRET(), { expiresIn: '365d' })
   res.status(201).json({ token, email: rows[0].email })
 })
 
