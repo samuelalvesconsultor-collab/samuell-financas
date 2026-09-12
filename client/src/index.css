@@ -56,6 +56,12 @@ html.light .td { color: #111827; }
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
+  /* Impede auto-zoom do iOS Safari ao focar em inputs */
+  @media (max-width: 768px) {
+    input, select, textarea {
+      font-size: 16px !important;
+    }
+  }
 }
 
 @layer components {
