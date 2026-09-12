@@ -164,9 +164,13 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onD
               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>Dia {c.dia_vencimento}</span>
                 <StatusBadge status={c.status} />
-                {c.tipo_pagamento && <TipoBadge tipo={c.tipo_pagamento} cores={coresStatus} />}
-                {c.forma_pagamento && <FormaBadge forma={c.forma_pagamento} cores={coresForma} />}
               </div>
+              {(c.tipo_pagamento || c.forma_pagamento) && (
+                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                  {c.tipo_pagamento && <TipoBadge tipo={c.tipo_pagamento} cores={coresStatus} />}
+                  {c.forma_pagamento && <FormaBadge forma={c.forma_pagamento} cores={coresForma} />}
+                </div>
+              )}
             </div>
             <div className="text-right shrink-0">
               <p className="text-xs font-bold tabular-nums"
