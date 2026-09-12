@@ -132,7 +132,12 @@ export default function Nav() {
       {/* ── Mobile bottom nav ───────────────────────────── */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 flex z-50"
-        style={{ background: 'var(--bg)', borderTop: '1px solid var(--card-border)' }}
+        style={{
+          background: 'rgba(13,13,13,0.75)',
+          backdropFilter: 'blur(18px)',
+          WebkitBackdropFilter: 'blur(18px)',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+        }}
       >
         {linksMobile.map(({ to, label, Icon }) => (
           <NavLink
