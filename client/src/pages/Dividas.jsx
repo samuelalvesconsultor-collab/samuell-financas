@@ -6,6 +6,7 @@ import FormDivida from '../components/FormDivida'
 import StatusBadge from '../components/StatusBadge'
 import CategoryBadge from '../components/CategoryBadge'
 import PageHeader from '../components/PageHeader'
+import FABButton from '../components/FABButton'
 
 const BRL = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const fmtDate = s => { if (!s) return '—'; const d = new Date(s); d.setMinutes(d.getMinutes()+d.getTimezoneOffset()); return d.toLocaleDateString('pt-BR') }
@@ -311,6 +312,8 @@ export default function Dividas() {
           <FormDivida inicial={modal !== 'novo' ? modal : undefined} onSalvar={salvar} onCancelar={() => setModal(null)} />
         </Modal>
       )}
+
+      <FABButton cor="#ef4444" onClick={() => setModal('novo')} posicao="center" scrollAware />
     </div>
   )
 }

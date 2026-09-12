@@ -8,6 +8,7 @@ import FormEntrada from '../components/FormEntrada'
 import MonthPicker from '../components/MonthPicker'
 import PageHeader from '../components/PageHeader'
 import GraficoMensal from '../components/GraficoMensal'
+import FABButton from '../components/FABButton'
 
 const BRL = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const fmtDate = s => {
@@ -281,6 +282,8 @@ export default function Entradas() {
           <FormEntrada inicial={modal !== 'novo' ? modal : undefined} onSalvar={salvar} onCancelar={() => setModal(null)} />
         </Modal>
       )}
+
+      <FABButton cor="#00e676" onClick={() => setModal('novo')} />
     </div>
   )
 }

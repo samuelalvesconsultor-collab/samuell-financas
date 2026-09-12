@@ -11,6 +11,7 @@ import CategoryBadge from '../components/CategoryBadge'
 import MonthPicker from '../components/MonthPicker'
 import PageHeader from '../components/PageHeader'
 import GraficoMensal from '../components/GraficoMensal'
+import FABButton from '../components/FABButton'
 
 const BRL = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -439,6 +440,8 @@ export default function Contas() {
           <FormConta inicial={modal !== 'novo' ? modal : undefined} onSalvar={salvar} onCancelar={() => setModal(null)} />
         </Modal>
       )}
+
+      <FABButton cor="#ff1744" onClick={() => setModal('novo')} />
     </div>
   )
 }
