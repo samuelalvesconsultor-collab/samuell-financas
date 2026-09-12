@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { getConfiguracoes, patchConfiguracao } from '../api/configuracoes'
 import { fetchAuth } from '../api/client'
 
@@ -44,12 +44,15 @@ export function AppProvider({ children }) {
       .catch(() => {})
   }, [])
 
+  const primeiroRender = useRef(true)
   useEffect(() => {
-    if (config.tema === 'light') {
-      document.documentElement.classList.add('light')
-    } else {
-      document.documentElement.classList.remove('light')
+    const el = document.documentElement
+    if (!primeiroRender.current) {
+      el.classList.add('theme-transitioning')
+      setTimeout(() => el.classList.remove('theme-transitioning'), 450)
     }
+    primeiroRender.current = false
+    config.tema === 'light' ? el.classList.add('light') : el.classList.remove('light')
   }, [config.tema])
 
   async function atualizarConfig(chave, valor) {

@@ -152,7 +152,7 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onD
         <span style={{ color: 'var(--text-faint)', marginTop: 2 }}><GripIcon /></span>
       </div>
 
-      <div className="flex-1 divide-y" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+      <div className="flex-1 divide-y" style={{ borderColor: 'var(--divider)' }}>
         {itens.map(c => (
           <div key={c.id} className="px-4 py-2.5 flex items-center gap-2"
             style={c.conta_pai_id ? { borderLeft: `2px solid ${VERM_BORDER}` } : {}}>
@@ -195,7 +195,7 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onD
       </div>
 
       <div className="px-4 py-3 flex items-center justify-between"
-        style={{ borderTop: '1px solid var(--card-border)', background: 'rgba(0,0,0,0.08)' }}>
+        style={{ borderTop: '1px solid var(--card-border)', background: 'var(--card-dim)' }}>
         <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: 'var(--text-faint)' }}>
           {itens.length} {itens.length === 1 ? 'conta' : 'contas'}
         </span>
@@ -229,7 +229,7 @@ function GastosSection({ gastos, onExcluir }) {
           <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400">Gastos do Mês</p>
           <span className="text-xs font-bold tabular-nums text-orange-400">{BRL(total)}</span>
         </div>
-        <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+        <div className="divide-y" style={{ borderColor: 'var(--divider)' }}>
           {gastos.map(g => (
             <div key={g.id} className="px-4 py-3 flex items-center gap-3">
               <div className="flex-1 min-w-0">
@@ -445,7 +445,7 @@ export default function Contas() {
         <Modal titulo="CONFIRMAR PAGAMENTO" onClose={() => setConfirmPagar(null)}>
           <div className="space-y-4">
             <p className="text-gray-400 text-sm">Confirma o pagamento da conta abaixo?</p>
-            <div className="rounded-lg p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="rounded-lg p-4" style={{ background: 'var(--card-alt)', border: '1px solid var(--card-border)' }}>
               <p className="text-white font-medium">{confirmPagar.descricao}</p>
               <p className="text-teal-400 font-display font-bold text-xl mt-1 tabular-nums">{BRL(confirmPagar.valor)}</p>
               <p className="text-gray-600 text-xs mt-1">Data: {new Date().toLocaleDateString('pt-BR')}</p>

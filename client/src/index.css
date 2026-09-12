@@ -3,46 +3,79 @@
 @tailwind utilities;
 
 :root {
-  --bg:           #0d0d0d;
-  --surface:      #121212;
-  --card:         #1a1a1a;
-  --card-alt:     #1e1e1e;
-  --card-border:  rgba(255,255,255,0.06);
-  --accent:       #dc2626;
-  --accent-bg:    rgba(220,38,38,0.12);
-  --accent-border:rgba(220,38,38,0.25);
-  --tpetrol:      #0d9488;
-  --text:         #ffffff;
-  --text-2:       #d1d5db;
-  --text-muted:   #9ca3af;
-  --text-faint:   #6b7280;
+  color-scheme: dark;
+  --bg:             #0d0d0d;
+  --surface:        #121212;
+  --card:           #1a1a1a;
+  --card-alt:       #1e1e1e;
+  --card-border:    rgba(255,255,255,0.06);
+  --accent:         #dc2626;
+  --accent-bg:      rgba(220,38,38,0.12);
+  --accent-border:  rgba(220,38,38,0.25);
+  --tpetrol:        #0d9488;
+  --text:           #ffffff;
+  --text-2:         #d1d5db;
+  --text-muted:     #9ca3af;
+  --text-faint:     #6b7280;
+  /* glass / structural */
+  --glass-header:   rgba(18,18,18,0.78);
+  --glass-nav:      rgba(13,13,13,0.78);
+  --modal-surface:  rgba(22,22,22,0.97);
+  --backdrop:       rgba(0,0,0,0.7);
+  --divider:        rgba(255,255,255,0.05);
+  --card-dim:       rgba(0,0,0,0.12);
+  --card-highlight: rgba(255,255,255,0.03);
+  --progress-track: rgba(255,255,255,0.07);
+  --chip-bg:        rgba(255,255,255,0.04);
+  --chip-border:    rgba(255,255,255,0.08);
 }
 
 html.light {
-  --bg:            #eef1f5;
-  --surface:       #f5f7fa;
-  --card:          #ffffff;
-  --card-alt:      #eef1f5;
-  --card-border:   rgba(0,0,0,0.07);
-  --text:          #111827;
-  --text-2:        #374151;
-  --text-muted:    #6b7280;
-  --text-faint:    #9ca3af;
+  color-scheme: light;
+  --bg:             #eef1f5;
+  --surface:        #f5f7fa;
+  --card:           #ffffff;
+  --card-alt:       #eef1f5;
+  --card-border:    rgba(0,0,0,0.07);
+  --text:           #111827;
+  --text-2:         #374151;
+  --text-muted:     #6b7280;
+  --text-faint:     #9ca3af;
+  /* glass / structural */
+  --glass-header:   rgba(245,247,250,0.88);
+  --glass-nav:      rgba(238,241,245,0.92);
+  --modal-surface:  rgba(255,255,255,0.97);
+  --backdrop:       rgba(0,0,0,0.5);
+  --divider:        rgba(0,0,0,0.06);
+  --card-dim:       rgba(0,0,0,0.04);
+  --card-highlight: rgba(0,0,0,0.02);
+  --progress-track: rgba(0,0,0,0.08);
+  --chip-bg:        rgba(0,0,0,0.05);
+  --chip-border:    rgba(0,0,0,0.1);
 }
 
-html.light .input-dark,
-html.light .select-dark {
-  color: #111827;
+/* Transição suave ao trocar tema (como nos celulares) */
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition:
+    background-color 0.4s ease,
+    color 0.35s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease !important;
 }
 
-html.light .text-white { color: #111827 !important; }
-html.light .text-gray-400 { color: #6b7280 !important; }
-html.light .text-gray-500 { color: #9ca3af !important; }
-html.light .text-gray-600 { color: #9ca3af !important; }
-html.light .table-row { border-top-color: rgba(0,0,0,0.05) !important; }
-html.light .table-row:hover { background-color: rgba(0,0,0,0.02) !important; }
-html.light .th { color: #9ca3af !important; }
-html.light .td { color: #111827; }
+/* Overrides light mode para classes Tailwind hardcoded */
+html.light .text-white        { color: #111827 !important; }
+html.light .text-gray-300     { color: #4b5563 !important; }
+html.light .text-gray-400     { color: #6b7280 !important; }
+html.light .text-gray-500     { color: #9ca3af !important; }
+html.light .text-gray-600     { color: #9ca3af !important; }
+html.light .table-row         { border-top-color: rgba(0,0,0,0.05) !important; }
+html.light .table-row:hover   { background-color: rgba(0,0,0,0.02) !important; }
+html.light .th                { color: #9ca3af !important; }
+html.light .td                { color: #111827; }
 
 @layer base {
   html {
@@ -66,17 +99,19 @@ html.light .td { color: #111827; }
 
 @layer components {
   .input-dark {
-    @apply w-full rounded-lg px-3 py-2 text-sm text-white focus:outline-none transition-colors;
+    @apply w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors;
     background-color: var(--card);
     border: 1px solid var(--card-border);
+    color: var(--text);
   }
   .input-dark::placeholder { color: var(--text-faint); }
   .input-dark:focus { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(220,38,38,0.2); }
 
   .select-dark {
-    @apply w-full rounded-lg px-3 py-2 text-sm text-white focus:outline-none transition-colors;
+    @apply w-full rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors;
     background-color: var(--card);
     border: 1px solid var(--card-border);
+    color: var(--text);
   }
   .select-dark:focus { border-color: var(--accent); }
 
@@ -87,26 +122,32 @@ html.light .td { color: #111827; }
   }
 
   .btn-primary {
-    @apply flex-1 text-white rounded-lg py-2 text-sm font-medium transition-colors;
+    @apply flex-1 rounded-lg py-2 text-sm font-medium transition-colors;
     background-color: var(--accent);
+    color: #ffffff;
   }
   .btn-primary:hover { background-color: #b91c1c; }
 
   .btn-ghost {
-    @apply flex-1 text-gray-400 hover:text-gray-200 rounded-lg py-2 text-sm transition-colors;
+    @apply flex-1 rounded-lg py-2 text-sm transition-colors;
     border: 1px solid var(--card-border);
+    color: var(--text-muted);
   }
+  .btn-ghost:hover { color: var(--text); }
 
   .btn-action {
-    @apply flex items-center gap-1.5 text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors;
+    @apply flex items-center gap-1.5 text-sm font-medium rounded-lg px-4 py-2 transition-colors;
     background-color: var(--accent);
+    color: #ffffff;
   }
   .btn-action:hover { background-color: #b91c1c; }
 
   .btn-outline {
-    @apply flex items-center gap-1.5 text-gray-400 hover:text-gray-200 text-sm rounded-lg px-3 py-2 transition-colors;
+    @apply flex items-center gap-1.5 text-sm rounded-lg px-3 py-2 transition-colors;
     border: 1px solid var(--card-border);
+    color: var(--text-muted);
   }
+  .btn-outline:hover { color: var(--text); }
 
   .page-header {
     @apply flex items-center justify-between px-6 py-4 sticky top-0 z-10;
@@ -116,10 +157,10 @@ html.light .td { color: #111827; }
 
   .table-row {
     @apply transition-colors;
-    border-top: 1px solid rgba(255,255,255,0.04);
+    border-top: 1px solid var(--divider);
   }
-  .table-row:hover { background-color: rgba(255,255,255,0.02); }
+  .table-row:hover { background-color: var(--card-highlight); }
 
-  .th { @apply text-left py-3 px-4 text-[10px] font-semibold uppercase tracking-widest text-gray-600; }
+  .th { @apply text-left py-3 px-4 text-[10px] font-semibold uppercase tracking-widest; color: var(--text-faint); }
   .td { @apply py-3.5 px-4; }
 }

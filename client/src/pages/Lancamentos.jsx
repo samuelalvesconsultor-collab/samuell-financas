@@ -86,7 +86,7 @@ function CategoriaCard({ grupo, onEditar, onExcluir, idx, dragOver, onDragStart,
         <span style={{ color: 'var(--text-faint)', marginTop: 2 }}><GripIcon /></span>
       </div>
 
-      <div className="flex-1 divide-y" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+      <div className="flex-1 divide-y" style={{ borderColor: 'var(--divider)' }}>
         {itens.map(l => (
           <div key={l.id} className="px-4 py-2.5 flex items-center gap-2"
             style={{ borderLeft: `2px solid ${VERDE_BORDER}` }}>
@@ -113,7 +113,7 @@ function CategoriaCard({ grupo, onEditar, onExcluir, idx, dragOver, onDragStart,
       </div>
 
       <div className="px-4 py-3 flex items-center justify-between"
-        style={{ borderTop: '1px solid var(--card-border)', background: 'rgba(0,0,0,0.08)' }}>
+        style={{ borderTop: '1px solid var(--card-border)', background: 'var(--card-dim)' }}>
         <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: 'var(--text-faint)' }}>
           {itens.length} {itens.length === 1 ? 'entrada' : 'entradas'}
         </span>

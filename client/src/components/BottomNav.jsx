@@ -106,7 +106,7 @@ export default function Nav() {
         {/* User footer */}
         <div className="px-2 py-3 shrink-0" style={{ borderTop: '1px solid var(--card-border)' }}>
           <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg overflow-hidden"
-            style={{ background: 'rgba(255,255,255,0.04)' }}>
+            style={{ background: 'var(--chip-bg)' }}>
             <div className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
               S
             </div>
@@ -133,10 +133,10 @@ export default function Nav() {
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 flex z-50"
         style={{
-          background: 'rgba(13,13,13,0.75)',
+          background: 'var(--glass-nav)',
           backdropFilter: 'blur(18px)',
           WebkitBackdropFilter: 'blur(18px)',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
+          borderTop: '1px solid var(--card-border)',
         }}
       >
         {linksMobile.map(({ to, label, Icon }) => (

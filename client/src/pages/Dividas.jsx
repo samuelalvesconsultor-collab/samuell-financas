@@ -57,7 +57,7 @@ function Parcelas({ divida, onPagar }) {
       <div className="space-y-1.5">
         {parcelas.map(p => (
           <div key={p.id} className="flex items-center justify-between py-2 px-3 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+            style={{ background: 'var(--card-highlight)', border: '1px solid var(--divider)' }}>
             <div className="flex items-center gap-3">
               <span className="text-[10px] text-gray-600 tabular-nums w-4">#{p.numero_parcela}</span>
               <span className="text-xs text-gray-400">{fmtDate(p.data_vencimento)}</span>
@@ -156,7 +156,7 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDrag
             <span>{divida.parcelas_pagas || 0} de {divida.num_parcelas} parcelas</span>
             <span>{Math.max(0, divida.num_parcelas - (divida.parcelas_pagas || 0))} restantes</span>
           </div>
-          <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <div className="h-1.5 rounded-full" style={{ background: 'var(--progress-track)' }}>
             <div className="h-1.5 rounded-full bg-red-600 transition-all" style={{ width: `${progresso}%` }} />
           </div>
         </div>
@@ -170,7 +170,7 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDrag
           </div>
         )}
 
-        <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+        <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid var(--divider)' }}>
           <button onClick={() => setExpandido(e => !e)}
             className="text-xs text-gray-500 hover:text-gray-200 transition-colors flex items-center gap-1"
             onMouseDown={e => e.stopPropagation()}>
@@ -205,7 +205,7 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDrag
       </div>
 
       {expandido && (
-        <div className="px-4 pb-4" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+        <div className="px-4 pb-4" style={{ borderTop: '1px solid var(--divider)' }}>
           <Parcelas divida={divida} onPagar={onRefresh} />
         </div>
       )}

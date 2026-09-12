@@ -39,18 +39,18 @@ export default function GraficoMensal({ titulo, dados, dataKey, cor, gradientId 
                   <stop offset="100%" stopColor={cor} stopOpacity={0.2} />
                 </linearGradient>
               </defs>
-              <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.04)" />
+              <CartesianGrid vertical={false} stroke="var(--divider)" />
               <XAxis dataKey="mes" tickFormatter={mesLabel} tick={{ fill: '#6b7280', fontSize: 9 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#6b7280', fontSize: 9 }} axisLine={false} tickLine={false}
                 tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--divider)' }} />
               <Bar dataKey={dataKey} fill={`url(#${id})`} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
       <div className="mt-3 pt-3 flex items-center justify-between"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        style={{ borderTop: '1px solid var(--divider)' }}>
         <span className="text-[10px] text-gray-600 uppercase tracking-widest">Total acumulado</span>
         <span className="text-sm font-semibold tabular-nums" style={{ color: cor }}>{BRL(total)}</span>
       </div>
