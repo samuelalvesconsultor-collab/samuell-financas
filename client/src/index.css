@@ -85,6 +85,16 @@ html.light .text-red-400      { color: #b91c1c !important; }
 html.light .text-orange-400   { color: #c2410c !important; }
 html.light .text-teal-400     { color: #0f766e !important; }
 html.light .text-teal-500     { color: #0d9488 !important; }
+/* Card "Contas em Aberto" no Dashboard — fundo cinza claro + amarelo vibrante */
+html.light .card-contas-abertas {
+  background: var(--card-alt) !important;
+  border-color: rgba(202,138,4,0.45) !important;
+}
+html.light .card-contas-abertas .text-yellow-100 { color: #b45309 !important; }
+html.light .card-contas-abertas .text-yellow-300 { color: #92400e !important; }
+html.light .card-contas-abertas .text-yellow-400 { color: #a16207 !important; }
+html.light .card-contas-abertas .text-yellow-700 { color: #713f12 !important; }
+
 html.light .table-row         { border-top-color: rgba(0,0,0,0.08) !important; }
 html.light .table-row:hover   { background-color: rgba(0,0,0,0.02) !important; }
 html.light .th                { color: #64748b !important; }

@@ -168,7 +168,7 @@ export default function Dashboard() {
             )}
 
             {dados.contas_proximas.length > 0 && (
-              <div className="rounded-xl p-4"
+              <div className="card-contas-abertas rounded-xl p-4"
                 style={{ background: 'rgba(234,179,8,0.05)', border: '1px solid rgba(234,179,8,0.18)' }}>
                 <h2 className="text-[10px] font-bold tracking-widest text-yellow-400 uppercase mb-3">Contas em Aberto</h2>
                 <div className="space-y-0.5">
