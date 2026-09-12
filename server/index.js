@@ -19,6 +19,7 @@ app.use('/api/dividas',      requireAuth, require('./src/routes/dividas'))
 app.use('/api/dashboard',    requireAuth, require('./src/routes/dashboard'))
 app.use('/api/parcelas',     requireAuth, require('./src/routes/parcelas'))
 app.use('/api/configuracoes',requireAuth, require('./src/routes/configuracoes'))
+app.use('/api/gastos',       requireAuth, require('./src/routes/gastos'))
 
 // Dev local: escuta na porta; Vercel: exporta o app
 if (process.env.VERCEL) {

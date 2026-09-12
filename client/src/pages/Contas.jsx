@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext'
 import { getContas, criarConta, atualizarConta, deletarConta, pagarConta } from '../api/contas'
 import { getConfiguracoes, patchConfiguracao } from '../api/configuracoes'
 import { getDashboard } from '../api/dashboard'
+import { getGastos, deletarGasto } from '../api/gastos'
 import Modal from '../components/Modal'
 import FormConta from '../components/FormConta'
 import StatusBadge from '../components/StatusBadge'
@@ -169,6 +170,60 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onD
   )
 }
 
+const BRL_CAT = {
+  comida: 'Comida', mercado: 'Mercado', farmacia: 'Farmácia',
+  compras_necessarias: 'Compras necessárias', combustivel: 'Combustível', gastos_extras: 'Gastos extras',
+}
+const BRL_FORMA = { credito: 'Crédito', debito: 'Débito', pix: 'PIX', dinheiro: 'Dinheiro' }
+
+const fmtData = s => {
+  const d = new Date(s)
+  d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
+  return d.toLocaleDateString('pt-BR')
+}
+
+function GastosSection({ gastos, onExcluir }) {
+  const total = gastos.reduce((s, g) => s + Number(g.valor), 0)
+  return (
+    <div className="px-4 md:px-8 pb-6 mt-2">
+      <div className="rounded-xl overflow-hidden" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
+        <div className="px-4 py-3 flex items-center justify-between"
+          style={{ borderBottom: '1px solid var(--card-border)' }}>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400">Gastos do Mês</p>
+          <span className="text-xs font-bold tabular-nums text-orange-400">{BRL(total)}</span>
+        </div>
+        <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+          {gastos.map(g => (
+            <div key={g.id} className="px-4 py-3 flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{g.descricao}</p>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+                    style={{ background: 'rgba(251,146,60,0.12)', color: '#fb923c', border: '1px solid rgba(251,146,60,0.2)' }}>
+                    {BRL_CAT[g.categoria] || g.categoria}
+                  </span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>
+                    {BRL_FORMA[g.forma_pagamento] || g.forma_pagamento}
+                  </span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>{fmtData(g.data)}</span>
+                </div>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-sm font-bold tabular-nums text-orange-400">-{BRL(g.valor)}</p>
+                <button onClick={() => onExcluir(g.id)}
+                  className="text-[10px] hover:text-red-400 transition-colors mt-1"
+                  style={{ color: 'var(--text-faint)' }}>
+                  Excluir
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Contas() {
   const { mesSelecionado } = useApp()
   const [lista, setLista]               = useState([])
@@ -178,21 +233,31 @@ export default function Contas() {
   const [excluirRec, setExcluirRec]     = useState(null)
   const [dragOver, setDragOver]         = useState(null)
   const [historico, setHistorico]       = useState([])
+  const [gastos, setGastos]             = useState([])
   const dragIdx    = useRef(null)
   const ordemSalva = useRef([])
+
+  const carregarGastos = () => getGastos(mesSelecionado).then(setGastos)
 
   useEffect(() => {
     Promise.all([
       getContas(mesSelecionado),
       getConfiguracoes(),
       getDashboard(mesSelecionado),
-    ]).then(([contas, cfg, dash]) => {
+      getGastos(mesSelecionado),
+    ]).then(([contas, cfg, dash, gst]) => {
       const ordem = cfg.ordem_grupos_contas ?? []
       ordemSalva.current = ordem
       setLista(contas)
       setGrupos(aplicarOrdem(agruparPorCategoria(contas), ordem))
       setHistorico(dash.historico_mensal || [])
+      setGastos(gst)
     })
+  }, [mesSelecionado])
+
+  useEffect(() => {
+    window.addEventListener('gasto-criado', carregarGastos)
+    return () => window.removeEventListener('gasto-criado', carregarGastos)
   }, [mesSelecionado])
 
   function salvarOrdem(novosGrupos) {
@@ -332,6 +397,13 @@ export default function Contas() {
             />
           ))}
         </div>
+      )}
+
+      {gastos.length > 0 && (
+        <GastosSection gastos={gastos} onExcluir={async id => {
+          await deletarGasto(id)
+          setGastos(g => g.filter(x => x.id !== id))
+        }} />
       )}
 
       {confirmPagar && (

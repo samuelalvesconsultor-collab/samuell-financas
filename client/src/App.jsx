@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppProvider } from './context/AppContext'
 import Nav from './components/BottomNav'
+import FAB from './components/FAB'
 import Dashboard from './pages/Dashboard'
 import Lancamentos from './pages/Lancamentos'
 import Contas from './pages/Contas'
@@ -16,6 +17,7 @@ function AppAutenticado({ onLogout }) {
     <AppProvider>
       <div className="flex min-h-screen" style={{ background: 'var(--surface)' }}>
         <Nav />
+        <FAB />
         <main className="flex-1 md:ml-14 pb-16 md:pb-0 min-w-0">
           <Routes>
             <Route path="/" element={<Dashboard />} />

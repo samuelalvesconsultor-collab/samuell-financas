@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { getDashboard } from '../api/dashboard'
-import { criarLancamento } from '../api/lancamentos'
 import { pagarConta, atualizarConta } from '../api/contas'
 import MonthPicker from '../components/MonthPicker'
 import PageHeader from '../components/PageHeader'
 import Modal from '../components/Modal'
-import FormLancamento from '../components/FormLancamento'
 import FormConta from '../components/FormConta'
 import StatusBadge from '../components/StatusBadge'
 const BRL = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -96,18 +94,11 @@ const CARD_MAP = {
 export default function Dashboard() {
   const { mesSelecionado, config } = useApp()
   const [dados, setDados] = useState(null)
-  const [modalLanc, setModalLanc] = useState(false)
   const [editConta, setEditConta] = useState(null)
   const [pagando, setPagando] = useState(new Set())
 
   const carregar = () => getDashboard(mesSelecionado).then(setDados)
   useEffect(() => { carregar() }, [mesSelecionado])
-
-  async function salvarLancamento(form) {
-    await criarLancamento(form)
-    setModalLanc(false)
-    carregar()
-  }
 
   async function marcarContaPaga(conta) {
     setPagando(s => new Set([...s, conta.id]))
@@ -134,10 +125,6 @@ export default function Dashboard() {
     <div className="min-h-screen" style={{ background: 'var(--surface)' }}>
       <PageHeader titulo="Dashboard">
         <MonthPicker />
-        <button onClick={() => setModalLanc(true)} className="btn-action text-xs md:text-sm px-3 md:px-4">
-          <span className="text-base md:text-lg leading-none">+</span>
-          <span className="hidden sm:inline">Lançamento</span>
-        </button>
       </PageHeader>
 
       <div className="p-4 md:p-8 space-y-4 md:space-y-6 w-full">
@@ -221,12 +208,6 @@ export default function Dashboard() {
           </>
         )}
       </div>
-
-      {modalLanc && (
-        <Modal titulo="NOVO LANÇAMENTO" onClose={() => setModalLanc(false)}>
-          <FormLancamento onSalvar={salvarLancamento} onCancelar={() => setModalLanc(false)} />
-        </Modal>
-      )}
 
       {editConta && (
         <Modal titulo="EDITAR CONTA" onClose={() => setEditConta(null)}>
