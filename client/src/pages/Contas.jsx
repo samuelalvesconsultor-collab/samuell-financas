@@ -78,6 +78,33 @@ const EyeOffIcon = () => (
   </svg>
 )
 
+function ModalExcluirParcelado({ conta, onSoParcela, onTodos, onCancelar }) {
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-gray-400">
+        <span className="text-white font-medium">{conta.descricao}</span> é uma compra parcelada.
+      </p>
+      <div className="rounded-lg px-3 py-2 text-xs"
+        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)' }}>
+        Parcela <span className="text-white font-semibold">{conta.parcela_atual}</span> de <span className="text-white font-semibold">{conta.num_parcelas}</span>
+      </div>
+      <div className="space-y-2">
+        <button onClick={onSoParcela} className="w-full text-left rounded-xl px-4 py-3 text-sm transition-colors"
+          style={{ background: 'var(--card-alt)', border: '1px solid var(--card-border)' }}>
+          <p className="text-white font-medium">Excluir só esta parcela</p>
+          <p className="text-gray-600 text-xs mt-0.5">Remove apenas a parcela {conta.parcela_atual}.</p>
+        </button>
+        <button onClick={onTodos} className="w-full text-left rounded-xl px-4 py-3 text-sm transition-colors"
+          style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.2)' }}>
+          <p className="text-red-400 font-medium">Excluir todo o parcelamento</p>
+          <p className="text-gray-600 text-xs mt-0.5">Remove todas as {conta.num_parcelas} parcelas. Não pode ser desfeito.</p>
+        </button>
+      </div>
+      <button onClick={onCancelar} className="w-full text-xs text-gray-600 hover:text-gray-400 py-1 transition-colors">Voltar</button>
+    </div>
+  )
+}
+
 function ModalExcluirRec({ conta, onSoMes, onSerie, onCancelar }) {
   return (
     <div className="space-y-4">
@@ -178,9 +205,15 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, onOcultar, idx, dr
               <span className="text-sm font-semibold leading-snug truncate block" style={{ color: 'var(--text)' }}>
                 {c.descricao}
               </span>
-              {/* Dia + Status */}
+              {/* Dia + Parcela + Status */}
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>Dia {c.dia_vencimento}</span>
+                {c.parcela_atual != null && (
+                  <span className="text-[10px] tabular-nums font-semibold px-1 py-0.5 rounded"
+                    style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-faint)' }}>
+                    {c.parcela_atual}/{c.num_parcelas}
+                  </span>
+                )}
                 <StatusBadge status={c.status} />
               </div>
               {/* Badges em fileira única */}
@@ -289,8 +322,9 @@ export default function Contas() {
   const [grupos, setGrupos]             = useState([])
   const [gruposOcultos, setGruposOcultos] = useState(new Set())
   const [modal, setModal]               = useState(null)
-  const [confirmPagar, setConfirmPagar] = useState(null)
-  const [excluirRec, setExcluirRec]     = useState(null)
+  const [confirmPagar, setConfirmPagar]     = useState(null)
+  const [excluirRec, setExcluirRec]         = useState(null)
+  const [excluirParcelado, setExcluirParcelado] = useState(null)
   const [dragOver, setDragOver]         = useState(null)
   const [historico, setHistorico]       = useState([])
   const [gastos, setGastos]             = useState([])
@@ -371,6 +405,11 @@ export default function Contas() {
   }
 
   async function excluir(conta) {
+    // Parcelado boleto/pix com parcelas (tem parcela_atual definido)
+    if (conta.tipo_pagamento === 'parcelado' && conta.parcela_atual != null) {
+      setExcluirParcelado(conta); return
+    }
+    // Recorrente filho
     if (conta.conta_pai_id) { setExcluirRec(conta); return }
     if (!confirm('Excluir conta?')) return
     await deletarConta(conta.id)
@@ -388,6 +427,18 @@ export default function Contas() {
   async function excluirSerie(conta) {
     setExcluirRec(null)
     await deletarConta(conta.conta_pai_id)
+    recarregar()
+  }
+
+  async function excluirSoParcela(conta) {
+    setExcluirParcelado(null)
+    await deletarConta(conta.id)
+    recarregar()
+  }
+
+  async function excluirTodoParcelamento(conta) {
+    setExcluirParcelado(null)
+    await deletarConta(conta.conta_pai_id)  // CASCADE remove todas as parcelas
     recarregar()
   }
 
@@ -534,6 +585,17 @@ export default function Contas() {
             onSoMes={() => excluirSoMes(excluirRec)}
             onSerie={() => excluirSerie(excluirRec)}
             onCancelar={() => setExcluirRec(null)}
+          />
+        </Modal>
+      )}
+
+      {excluirParcelado && (
+        <Modal titulo="EXCLUIR PARCELAMENTO" onClose={() => setExcluirParcelado(null)}>
+          <ModalExcluirParcelado
+            conta={excluirParcelado}
+            onSoParcela={() => excluirSoParcela(excluirParcelado)}
+            onTodos={() => excluirTodoParcelamento(excluirParcelado)}
+            onCancelar={() => setExcluirParcelado(null)}
           />
         </Modal>
       )}

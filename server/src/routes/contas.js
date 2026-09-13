@@ -87,6 +87,30 @@ router.post('/', async (req, res) => {
     const tipoFinal = tipo_pagamento || 'avista'
     const numParc = tipoFinal === 'parcelado' && num_parcelas ? parseInt(num_parcelas) : null
 
+    // Parcelado + boleto/pix: cria template invisível + instância por mês
+    if (tipoFinal === 'parcelado' && numParc >= 2 && forma_pagamento !== 'credito') {
+      const { rows: [tmpl] } = await pool.query(`
+        INSERT INTO contas (descricao, valor, dia_vencimento, mes_referencia, status, categoria_id,
+                            recorrente, forma_pagamento, num_parcelas, tipo_pagamento)
+        VALUES ($1, $2, $3, $4, 'pendente', $5, true, $6, $7, 'parcelado') RETURNING *
+      `, [descricao, valor, dia_vencimento, mesRef, categoria_id || null, forma_pagamento || null, numParc])
+
+      let primeira
+      for (let i = 1; i <= numParc; i++) {
+        const d = new Date(mesRef + 'T12:00:00Z')
+        d.setUTCMonth(d.getUTCMonth() + (i - 1))
+        const mesRefParc = d.toISOString().split('T')[0]
+        const { rows: [inst] } = await pool.query(`
+          INSERT INTO contas (descricao, valor, dia_vencimento, mes_referencia, status, categoria_id,
+                              recorrente, conta_pai_id, forma_pagamento, num_parcelas, tipo_pagamento, parcela_atual)
+          VALUES ($1, $2, $3, $4, 'pendente', $5, false, $6, $7, $8, 'parcelado', $9) RETURNING *
+        `, [descricao, valor, dia_vencimento, mesRefParc, categoria_id || null,
+            tmpl.id, forma_pagamento || null, numParc, i])
+        if (i === 1) primeira = inst
+      }
+      return res.status(201).json(primeira)
+    }
+
     const { rows: [conta] } = await pool.query(`
       INSERT INTO contas (descricao, valor, dia_vencimento, mes_referencia, status, categoria_id, cartao_vinculado, recorrente, forma_pagamento, num_parcelas, tipo_pagamento)
       VALUES ($1, $2, $3, $4, $5, $6, $7, false, $8, $9, $10) RETURNING *
@@ -94,8 +118,8 @@ router.post('/', async (req, res) => {
         categoria_id || null, cartao_vinculado || null,
         forma_pagamento || null, numParc, tipoFinal])
 
-    // Auto-cria dívida quando parcelado com 2+ parcelas
-    if (tipoFinal === 'parcelado' && numParc >= 2) {
+    // Auto-cria dívida apenas para parcelado + crédito
+    if (tipoFinal === 'parcelado' && numParc >= 2 && forma_pagamento === 'credito') {
       const valorUnit = parseFloat(valor)
       const valorTotal = valorUnit * numParc
       const hoje = new Date()
@@ -103,15 +127,12 @@ router.post('/', async (req, res) => {
       const dataTermino = new Date(hoje)
       dataTermino.setUTCMonth(dataTermino.getUTCMonth() + numParc - 1)
       const dataTerminoStr = dataTermino.toISOString().split('T')[0]
-      const formaDiv = forma_pagamento === 'credito' ? 'cartao_credito' : (forma_pagamento || 'boleto')
-      const descDiv = cartao_vinculado
-        ? `${descricao} (${cartao_vinculado})`
-        : descricao
+      const descDiv = cartao_vinculado ? `${descricao} (${cartao_vinculado})` : descricao
 
       const { rows: [divida] } = await pool.query(`
         INSERT INTO dividas (descricao, tipo, valor_total, num_parcelas, valor_parcela, data_inicio, data_termino, categoria_id, forma_pagamento)
-        VALUES ($1, 'parcelamento', $2, $3, $4, $5, $6, $7, $8) RETURNING id
-      `, [descDiv, valorTotal, numParc, valorUnit, dataInicio, dataTerminoStr, categoria_id || null, formaDiv])
+        VALUES ($1, 'parcelamento', $2, $3, $4, $5, $6, $7, 'cartao_credito') RETURNING id
+      `, [descDiv, valorTotal, numParc, valorUnit, dataInicio, dataTerminoStr, categoria_id || null])
 
       for (let i = 0; i < numParc; i++) {
         const d = new Date(dataInicio + 'T12:00:00Z')

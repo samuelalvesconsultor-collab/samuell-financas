@@ -1,0 +1,1 @@
+ALTER TABLE contas ADD COLUMN IF NOT EXISTS parcela_atual INTEGER;

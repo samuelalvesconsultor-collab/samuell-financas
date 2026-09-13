@@ -1,10 +1,14 @@
 require('dotenv').config()
 const express = require('express')
 const cors    = require('cors')
+const pool    = require('./src/db')
 
 const app = express()
 app.use(cors())
 app.use(express.json())
+
+// Auto-migrate: add parcela_atual column if not exists
+pool.query('ALTER TABLE contas ADD COLUMN IF NOT EXISTS parcela_atual INTEGER').catch(() => {})
 
 app.get('/api/health', (req, res) => res.json({ ok: true }))
 
