@@ -74,9 +74,6 @@ function CatRow({ c, onEdit, onToggleArq, onMudarCor }) {
       </label>
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm truncate" style={{ color: 'var(--text)' }}>{c.nome}</p>
-        {c.padrao && (
-          <span className="text-[10px] text-yellow-400 border border-yellow-800/40 bg-yellow-900/20 px-2 py-0.5 rounded-full">Padrão</span>
-        )}
       </div>
       <div className="flex items-center gap-3 shrink-0">
         <button onClick={() => onEdit(c)} title="Editar" className="text-gray-600 hover:text-gray-300 transition-colors">
