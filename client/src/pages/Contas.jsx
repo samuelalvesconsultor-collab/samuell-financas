@@ -154,26 +154,29 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onD
 
       <div className="flex-1 divide-y" style={{ borderColor: 'var(--divider)' }}>
         {itens.map(c => (
-          <div key={c.id} className="px-4 py-2.5 flex items-center gap-2"
+          <div key={c.id} className="px-4 py-3 flex items-center gap-3"
             style={c.conta_pai_id ? { borderLeft: `2px solid ${VERM_BORDER}` } : {}}>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-medium truncate" style={{ color: 'var(--text)' }}>{c.descricao}</span>
-                {c.conta_pai_id && <RecBadge cartao={c.cartao_vinculado} />}
-              </div>
-              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>Dia {c.dia_vencimento}</span>
+              {/* Nome — destaque principal */}
+              <span className="text-sm font-semibold leading-snug truncate block" style={{ color: 'var(--text)' }}>
+                {c.descricao}
+              </span>
+              {/* Dia + Status */}
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>Dia {c.dia_vencimento}</span>
                 <StatusBadge status={c.status} />
               </div>
-              {(c.tipo_pagamento || c.forma_pagamento) && (
-                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              {/* Badges em fileira única */}
+              {(c.conta_pai_id || c.tipo_pagamento || c.forma_pagamento) && (
+                <div className="flex items-center gap-1 mt-1.5">
+                  {c.conta_pai_id && <RecBadge cartao={c.cartao_vinculado} />}
                   {c.tipo_pagamento && <TipoBadge tipo={c.tipo_pagamento} cores={coresStatus} />}
                   {c.forma_pagamento && <FormaBadge forma={c.forma_pagamento} cores={coresForma} />}
                 </div>
               )}
             </div>
             <div className="text-right shrink-0">
-              <p className="text-xs font-bold tabular-nums"
+              <p className="text-sm font-bold tabular-nums"
                 style={c.status === 'paga'
                   ? { color: '#22c55e', textShadow: '0 0 10px rgba(34,197,94,0.35)' }
                   : { color: VERM,      textShadow: '0 0 10px rgba(255,23,68,0.3)'  }}>
