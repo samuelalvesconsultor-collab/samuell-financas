@@ -185,12 +185,12 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onD
               <div className="flex items-center gap-2 justify-end mt-1">
                 {c.status !== 'paga' && (
                   <button onClick={() => onPagar(c)} className="text-[10px] transition-colors" style={{ color: '#14b8a6' }}
-                    onMouseDown={e => e.stopPropagation()}>Pagar</button>
+                    onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Pagar</button>
                 )}
                 <button onClick={() => onEditar(c)} className="text-[10px] transition-colors" style={{ color: 'var(--text-faint)' }}
-                  onMouseDown={e => e.stopPropagation()}>Editar</button>
+                  onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Editar</button>
                 <button onClick={() => onExcluir(c)} className="text-[10px] hover:text-red-400 transition-colors" style={{ color: 'var(--text-faint)' }}
-                  onMouseDown={e => e.stopPropagation()}>Excluir</button>
+                  onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Excluir</button>
               </div>
             </div>
           </div>

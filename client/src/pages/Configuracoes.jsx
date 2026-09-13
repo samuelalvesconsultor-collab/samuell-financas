@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useApp, CORES_STATUS_DEFAULT, CORES_FORMA_DEFAULT } from '../context/AppContext'
 import { getCategorias, criarCategoria, atualizarCategoria, arquivarCategoria } from '../api/categorias'
 import Modal from '../components/Modal'
@@ -58,20 +58,27 @@ const LogoutIcon = () => (
 )
 
 function CatRow({ c, onEdit, onToggleArq, onMudarCor }) {
+  const colorRef = useRef(null)
   return (
     <div className="rounded-xl px-4 py-3 flex items-center gap-3"
       style={{ background: 'var(--card)', border: `1px solid ${c.cor ? c.cor + '30' : 'var(--card-border)'}` }}>
-      <label className="relative w-5 h-5 rounded-full shrink-0 cursor-pointer"
+      <button
+        type="button"
+        onClick={() => colorRef.current?.click()}
+        className="relative w-5 h-5 rounded-full shrink-0 cursor-pointer"
         style={{ background: c.cor || 'var(--card-border)', boxShadow: c.cor ? `0 0 6px ${c.cor}66` : 'none' }}
-        title="Alterar cor">
+        title="Alterar cor"
+      >
         <input
+          ref={colorRef}
           type="color"
           value={c.cor || '#6b7280'}
           onChange={e => onMudarCor(c, e.target.value)}
           className="absolute inset-0 opacity-0 w-full h-full cursor-pointer rounded-full"
           style={{ fontSize: '16px' }}
+          tabIndex={-1}
         />
-      </label>
+      </button>
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm truncate" style={{ color: 'var(--text)' }}>{c.nome}</p>
       </div>

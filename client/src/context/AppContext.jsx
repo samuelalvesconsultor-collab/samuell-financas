@@ -33,6 +33,7 @@ export function AppProvider({ children }) {
       .then(data => {
         setConfig(c => ({
           ...c,
+          ...data,
           tema: data.tema || 'dark',
           dashboard_cards: Array.isArray(data.dashboard_cards) && data.dashboard_cards.length > 0
             ? data.dashboard_cards
