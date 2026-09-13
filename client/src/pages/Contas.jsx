@@ -71,6 +71,13 @@ const GripIcon = () => (
   </svg>
 )
 
+const EyeOffIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>
+)
+
 function ModalExcluirRec({ conta, onSoMes, onSerie, onCancelar }) {
   return (
     <div className="space-y-4">
@@ -121,7 +128,7 @@ function aplicarOrdem(grupos, ordemSalva) {
   })
 }
 
-function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, coresStatus, coresForma, exibirBadges }) {
+function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, onOcultar, idx, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, coresStatus, coresForma, exibirBadges }) {
   const { nome, cor: corSalva, itens } = grupo
   const total = itens.reduce((s, c) => s + Number(c.valor), 0)
   const cor   = corCategoria(nome, corSalva)
@@ -149,7 +156,17 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onD
           </p>
           <div className="h-0.5 w-5 rounded-full" style={{ background: cor }} />
         </div>
-        <span style={{ color: 'var(--text-faint)', marginTop: 2 }}><GripIcon /></span>
+        <div className="flex items-center gap-2" style={{ marginTop: 2 }}>
+          <button
+            onClick={() => onOcultar(nome)}
+            title="Ocultar card"
+            className="text-gray-700 hover:text-gray-400 transition-colors"
+            onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}
+          >
+            <EyeOffIcon />
+          </button>
+          <span style={{ color: 'var(--text-faint)' }}><GripIcon /></span>
+        </div>
       </div>
 
       <div className="flex-1 divide-y" style={{ borderColor: 'var(--divider)' }}>
@@ -264,10 +281,13 @@ function GastosSection({ gastos, onExcluir }) {
   )
 }
 
+const OCULTOS_KEY = 'contas_grupos_ocultos'
+
 export default function Contas() {
   const { mesSelecionado, config } = useApp()
   const [lista, setLista]               = useState([])
   const [grupos, setGrupos]             = useState([])
+  const [gruposOcultos, setGruposOcultos] = useState(new Set())
   const [modal, setModal]               = useState(null)
   const [confirmPagar, setConfirmPagar] = useState(null)
   const [excluirRec, setExcluirRec]     = useState(null)
@@ -290,10 +310,26 @@ export default function Contas() {
       ordemSalva.current = ordem
       setLista(contas)
       setGrupos(aplicarOrdem(agruparPorCategoria(contas), ordem))
+      setGruposOcultos(new Set(Array.isArray(cfg[OCULTOS_KEY]) ? cfg[OCULTOS_KEY] : []))
       setHistorico(dash.historico_mensal || [])
       setGastos(gst)
     })
   }, [mesSelecionado])
+
+  function ocultarGrupo(nome) {
+    const chave = nome ?? '__sem__'
+    setGruposOcultos(prev => {
+      const next = new Set(prev)
+      next.add(chave)
+      patchConfiguracao(OCULTOS_KEY, JSON.stringify([...next]))
+      return next
+    })
+  }
+
+  function mostrarTodos() {
+    setGruposOcultos(new Set())
+    patchConfiguracao(OCULTOS_KEY, JSON.stringify([]))
+  }
 
   useEffect(() => {
     window.addEventListener('gasto-criado', carregarGastos)
@@ -407,6 +443,20 @@ export default function Contas() {
         </div>
       )}
 
+      {gruposOcultos.size > 0 && (
+        <div className="mx-4 md:mx-8 mb-2 flex items-center justify-between gap-3 px-4 py-2 rounded-xl"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)' }}>
+          <span className="text-[11px]" style={{ color: 'var(--text-faint)' }}>
+            {gruposOcultos.size} {gruposOcultos.size === 1 ? 'grupo oculto' : 'grupos ocultos'}
+          </span>
+          <button onClick={mostrarTodos}
+            className="text-[11px] font-medium transition-colors"
+            style={{ color: '#14b8a6' }}>
+            Mostrar todos
+          </button>
+        </div>
+      )}
+
       {!lista.length ? (
         <div className="text-center py-16 text-gray-600 text-sm px-4">
           <p className="mb-2">Nenhuma conta registrada neste mês.</p>
@@ -417,24 +467,28 @@ export default function Contas() {
         </div>
       ) : (
         <div className="px-4 md:px-8 pb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {grupos.map((grupo, idx) => (
-            <CategoriaCard
-              key={grupo.nome || '__sem__'}
-              grupo={grupo}
-              idx={idx}
-              dragOver={dragOver}
-              onDragStart={onDragStart}
-              onDragOver={onDragOver}
-              onDrop={onDrop}
-              onDragEnd={onDragEnd}
-              onPagar={setConfirmPagar}
-              onEditar={setModal}
-              onExcluir={excluir}
-              coresStatus={config?.badge_status_cores}
-              coresForma={config?.badge_forma_cores}
-              exibirBadges={config?.exibir_badges}
-            />
-          ))}
+          {grupos
+            .filter(g => !gruposOcultos.has(g.nome ?? '__sem__'))
+            .map((grupo, idx) => (
+              <CategoriaCard
+                key={grupo.nome || '__sem__'}
+                grupo={grupo}
+                idx={idx}
+                dragOver={dragOver}
+                onDragStart={onDragStart}
+                onDragOver={onDragOver}
+                onDrop={onDrop}
+                onDragEnd={onDragEnd}
+                onPagar={setConfirmPagar}
+                onEditar={setModal}
+                onExcluir={excluir}
+                onOcultar={ocultarGrupo}
+                coresStatus={config?.badge_status_cores}
+                coresForma={config?.badge_forma_cores}
+                exibirBadges={config?.exibir_badges}
+              />
+            ))
+          }
         </div>
       )}
 
