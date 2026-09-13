@@ -44,51 +44,12 @@ function SecaoTitulo({ label }) {
   )
 }
 
-const PencilIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-  </svg>
-)
 const LogoutIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
     <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
   </svg>
 )
-
-function CatRow({ c, onEdit, onToggleArq, onMudarCor }) {
-  return (
-    <div className="rounded-xl px-4 py-3 flex items-center gap-3"
-      style={{ background: 'var(--card)', border: `1px solid ${c.cor ? c.cor + '30' : 'var(--card-border)'}` }}>
-      <label className="relative w-5 h-5 rounded-full shrink-0 cursor-pointer flex-shrink-0"
-        style={{ background: c.cor || 'var(--card-border)', boxShadow: c.cor ? `0 0 6px ${c.cor}66` : 'none' }}
-        title="Alterar cor">
-        <input
-          type="color"
-          value={c.cor || '#6b7280'}
-          onChange={e => onMudarCor(c, e.target.value)}
-          className="absolute inset-0 opacity-0 w-full h-full cursor-pointer rounded-full"
-          style={{ fontSize: '16px' }}
-        />
-      </label>
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm truncate" style={{ color: 'var(--text)' }}>{c.nome}</p>
-        {c.padrao && (
-          <span className="text-[10px] text-yellow-400 border border-yellow-800/40 bg-yellow-900/20 px-2 py-0.5 rounded-full">Padrão</span>
-        )}
-      </div>
-      <div className="flex items-center gap-3 shrink-0">
-        <button onClick={() => onEdit(c)} title="Editar" className="text-gray-600 hover:text-gray-300 transition-colors">
-          <PencilIcon />
-        </button>
-        <button onClick={onToggleArq} title="Ocultar" className="text-gray-600 hover:text-yellow-400 transition-colors">
-          <EyeIcon off={false} />
-        </button>
-      </div>
-    </div>
-  )
-}
 
 export default function Configuracoes({ onLogout }) {
   const { config, atualizarConfig, setCategorias } = useApp()
@@ -160,15 +121,8 @@ export default function Configuracoes({ onLogout }) {
     setModalCat(null); carregarCats()
   }
 
-  async function mudarCorCat(c, novaCor) {
-    await atualizarCategoria(c.id, { nome: c.nome, tipo: c.tipo, cor: novaCor })
-    carregarCats()
-  }
-
   const catsAtivas     = listaCats.filter(c => !c.arquivada)
   const catsArquivadas = listaCats.filter(c => c.arquivada)
-  const catsEntrada    = catsAtivas.filter(c => c.tipo === 'entrada' || c.tipo === 'ambos')
-  const catsSaida      = catsAtivas.filter(c => c.tipo === 'saida'   || c.tipo === 'ambos')
   const isLight = config.tema === 'light'
 
   return (
@@ -373,7 +327,7 @@ export default function Configuracoes({ onLogout }) {
 
         {/* ── Seção 5: Categorias ────────────────────── */}
         <section>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <SecaoTitulo label="Categorias" />
             <div className="flex items-center gap-3 mb-3">
               <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
@@ -383,7 +337,7 @@ export default function Configuracoes({ onLogout }) {
                   onChange={e => setMostrarArquivadas(e.target.checked)}
                   className="accent-red-600"
                 />
-                Ocultas
+                Arquivadas
               </label>
               <button onClick={() => setModalCat('novo')} className="btn-action text-xs px-3 py-1.5">
                 + Nova
@@ -391,89 +345,93 @@ export default function Configuracoes({ onLogout }) {
             </div>
           </div>
 
-          {!catsAtivas.length && !catsArquivadas.length ? (
+          {!listaCats.length ? (
             <div className="text-center py-10 text-gray-600 text-sm rounded-xl"
               style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
               Nenhuma categoria cadastrada.
             </div>
           ) : (
-            <div className="space-y-5">
-
-              {/* Grupo: Entradas */}
-              <div>
-                <p className="text-[10px] font-bold tracking-widest uppercase mb-2 px-1" style={{ color: '#14b8a6' }}>
-                  Entradas
-                </p>
-                {catsEntrada.length === 0 ? (
-                  <div className="text-xs py-4 text-center rounded-xl"
-                    style={{ background: 'var(--card)', border: '1px solid var(--card-border)', color: 'var(--text-faint)' }}>
-                    Nenhuma categoria de entrada
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {catsEntrada.map(c => (
-                      <CatRow
-                        key={c.id}
-                        c={c}
-                        onEdit={setModalCat}
-                        onToggleArq={() => arquivarCategoria(c.id).then(carregarCats)}
-                        onMudarCor={mudarCorCat}
-                      />
+            <>
+              {/* Desktop */}
+              <div className="hidden md:block rounded-xl overflow-hidden"
+                style={{ border: '1px solid var(--card-border)' }}>
+                <table className="w-full text-sm">
+                  <thead style={{ background: 'var(--card-alt)' }}>
+                    <tr>
+                      <th className="th">Nome</th>
+                      <th className="th">Tipo</th>
+                      <th className="th">Padrão</th>
+                      <th className="th" />
+                    </tr>
+                  </thead>
+                  <tbody style={{ background: 'var(--card)' }}>
+                    {catsAtivas.map(c => (
+                      <tr key={c.id} className="table-row">
+                        <td className="td">
+                          <div className="flex items-center gap-2">
+                            {c.cor
+                              ? <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c.cor, boxShadow: `0 0 6px ${c.cor}88` }} />
+                              : <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: 'var(--card-border)' }} />
+                            }
+                            <span className="text-white font-medium">{c.nome}</span>
+                          </div>
+                        </td>
+                        <td className="td text-gray-500">{TIPO_LABEL[c.tipo]}</td>
+                        <td className="td">
+                          {c.padrao && <span className="text-[10px] text-yellow-400 border border-yellow-800/40 bg-yellow-900/20 px-2 py-0.5 rounded-full">Padrão</span>}
+                        </td>
+                        <td className="td text-right whitespace-nowrap">
+                          <button onClick={() => setModalCat(c)} className="text-gray-600 hover:text-gray-300 text-xs mr-4 transition-colors">Editar</button>
+                          <button onClick={() => arquivarCategoria(c.id).then(carregarCats)} className="text-gray-600 hover:text-yellow-400 text-xs transition-colors">Arquivar</button>
+                        </td>
+                      </tr>
                     ))}
-                  </div>
-                )}
+                    {mostrarArquivadas && catsArquivadas.map(c => (
+                      <tr key={c.id} className="table-row opacity-40">
+                        <td className="td text-gray-500 line-through">{c.nome}</td>
+                        <td className="td text-gray-600">{TIPO_LABEL[c.tipo]}</td>
+                        <td className="td" />
+                        <td className="td text-right">
+                          <button onClick={() => arquivarCategoria(c.id).then(carregarCats)} className="text-teal-600 hover:text-teal-400 text-xs transition-colors">Restaurar</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
-              {/* Grupo: Saídas */}
-              <div>
-                <p className="text-[10px] font-bold tracking-widest uppercase mb-2 px-1" style={{ color: '#ef4444' }}>
-                  Saídas
-                </p>
-                {catsSaida.length === 0 ? (
-                  <div className="text-xs py-4 text-center rounded-xl"
-                    style={{ background: 'var(--card)', border: '1px solid var(--card-border)', color: 'var(--text-faint)' }}>
-                    Nenhuma categoria de saída
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {catsSaida.map(c => (
-                      <CatRow
-                        key={c.id}
-                        c={c}
-                        onEdit={setModalCat}
-                        onToggleArq={() => arquivarCategoria(c.id).then(carregarCats)}
-                        onMudarCor={mudarCorCat}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Grupo: Ocultas */}
-              {mostrarArquivadas && catsArquivadas.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-bold tracking-widest uppercase mb-2 px-1" style={{ color: 'var(--text-faint)' }}>
-                    Ocultas
-                  </p>
-                  <div className="space-y-2">
-                    {catsArquivadas.map(c => (
-                      <div key={c.id} className="rounded-xl px-4 py-3 flex items-center gap-3 opacity-50"
-                        style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
-                        <div className="w-4 h-4 rounded-full shrink-0"
-                          style={{ background: c.cor || 'var(--card-border)' }} />
-                        <p className="flex-1 text-sm line-through truncate" style={{ color: 'var(--text-muted)' }}>{c.nome}</p>
-                        <button
-                          onClick={() => arquivarCategoria(c.id).then(carregarCats)}
-                          className="text-teal-600 hover:text-teal-400 text-xs shrink-0 transition-colors">
-                          Mostrar
-                        </button>
+              {/* Mobile */}
+              <div className="md:hidden space-y-2">
+                {catsAtivas.map(c => (
+                  <div key={c.id} className="rounded-xl p-4 flex items-center justify-between gap-3"
+                    style={{ background: 'var(--card)', border: `1px solid ${c.cor ? c.cor + '40' : 'var(--card-border)'}` }}>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        {c.cor && <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c.cor, boxShadow: `0 0 6px ${c.cor}88` }} />}
+                        <p className="text-white font-medium text-sm truncate">{c.nome}</p>
                       </div>
-                    ))}
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <span className={`text-[10px] border px-2 py-0.5 rounded-full ${TIPO_COR[c.tipo]}`}>
+                          {TIPO_LABEL[c.tipo]}
+                        </span>
+                        {c.padrao && <span className="text-[10px] text-yellow-400 border border-yellow-800/40 bg-yellow-900/20 px-2 py-0.5 rounded-full">Padrão</span>}
+                      </div>
+                    </div>
+                    <div className="flex gap-3 shrink-0">
+                      <button onClick={() => setModalCat(c)} className="text-gray-600 hover:text-gray-300 text-xs transition-colors">Editar</button>
+                      <button onClick={() => arquivarCategoria(c.id).then(carregarCats)} className="text-gray-600 hover:text-yellow-400 text-xs transition-colors">Arquivar</button>
+                    </div>
                   </div>
-                </div>
-              )}
-
-            </div>
+                ))}
+                {mostrarArquivadas && catsArquivadas.map(c => (
+                  <div key={c.id} className="rounded-xl p-4 flex items-center justify-between gap-3 opacity-40"
+                    style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
+                    <p className="text-gray-500 line-through text-sm truncate">{c.nome}</p>
+                    <button onClick={() => arquivarCategoria(c.id).then(carregarCats)} className="text-teal-600 hover:text-teal-400 text-xs shrink-0 transition-colors">Restaurar</button>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </section>
 
