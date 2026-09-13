@@ -72,12 +72,12 @@ router.get('/', async (req, res) => {
     // Dívidas com parcela pendente no mês (exclui cartão de crédito)
     pool.query(
       `SELECT d.id, d.descricao, d.tipo, d.valor_parcela,
-              p.data_vencimento as proxima_vencimento,
+              p.id as parcela_id, p.data_vencimento as proxima_vencimento,
               cat.nome as categoria_nome
        FROM dividas d
        LEFT JOIN categorias cat ON d.categoria_id = cat.id
        JOIN LATERAL (
-         SELECT data_vencimento FROM parcelas_divida
+         SELECT id, data_vencimento FROM parcelas_divida
          WHERE divida_id = d.id AND status = 'pendente'
            AND DATE_TRUNC('month', data_vencimento) = DATE_TRUNC('month', $1::date)
          ORDER BY numero_parcela LIMIT 1

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { getDashboard } from '../api/dashboard'
 import { pagarConta, atualizarConta } from '../api/contas'
-import { registrarParcela } from '../api/dividas'
+import { pagarParcela } from '../api/dividas'
 import MonthPicker from '../components/MonthPicker'
 import PageHeader from '../components/PageHeader'
 import Modal from '../components/Modal'
@@ -123,7 +123,7 @@ export default function Dashboard() {
 
   async function pagarDividaMes(divida) {
     setPagandoDivida(s => new Set([...s, divida.id]))
-    await registrarParcela(divida.id)
+    await pagarParcela(divida.parcela_id, new Date().toISOString().split('T')[0])
     await carregar()
     setPagandoDivida(s => { const n = new Set(s); n.delete(divida.id); return n })
   }
