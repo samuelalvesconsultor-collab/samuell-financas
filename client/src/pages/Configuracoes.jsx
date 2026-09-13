@@ -368,6 +368,27 @@ export default function Configuracoes({ onLogout }) {
                 })}
               </div>
             </div>
+            {/* Toggle exibir etiquetas */}
+            <div className="rounded-xl p-4 md:p-5" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>Exibir etiquetas</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-faint)' }}>
+                    Mostrar badges de tipo e forma nos cards de Contas
+                  </p>
+                </div>
+                <button
+                  onClick={() => atualizarConfig('exibir_badges', config.exibir_badges === false ? true : false)}
+                  className="relative w-11 h-6 rounded-full transition-colors duration-300 shrink-0"
+                  style={{ background: config.exibir_badges === false ? 'rgba(255,255,255,0.12)' : '#dc2626' }}
+                >
+                  <span
+                    className="absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-300"
+                    style={{ transform: config.exibir_badges === false ? 'translateX(4px)' : 'translateX(21px)' }}
+                  />
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 

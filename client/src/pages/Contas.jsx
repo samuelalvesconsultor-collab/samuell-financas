@@ -121,7 +121,7 @@ function aplicarOrdem(grupos, ordemSalva) {
   })
 }
 
-function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, coresStatus, coresForma }) {
+function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, coresStatus, coresForma, exibirBadges }) {
   const { nome, cor: corSalva, itens } = grupo
   const total = itens.reduce((s, c) => s + Number(c.valor), 0)
   const cor   = corCategoria(nome, corSalva)
@@ -167,7 +167,7 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, idx, dragOver, onD
                 <StatusBadge status={c.status} />
               </div>
               {/* Badges em fileira única */}
-              {(c.conta_pai_id || c.tipo_pagamento || c.forma_pagamento) && (
+              {exibirBadges !== false && (c.conta_pai_id || c.tipo_pagamento || c.forma_pagamento) && (
                 <div className="flex items-center gap-1 mt-1.5">
                   {c.conta_pai_id && <RecBadge cartao={c.cartao_vinculado} />}
                   {c.tipo_pagamento && <TipoBadge tipo={c.tipo_pagamento} cores={coresStatus} />}
@@ -432,6 +432,7 @@ export default function Contas() {
               onExcluir={excluir}
               coresStatus={config?.badge_status_cores}
               coresForma={config?.badge_forma_cores}
+              exibirBadges={config?.exibir_badges}
             />
           ))}
         </div>
