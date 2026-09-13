@@ -2,12 +2,17 @@ import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 
 const hoje = new Date().toISOString().split('T')[0]
+const toDateStr = v => (!v ? '' : String(v).slice(0, 10))
 
 const VAZIO = { descricao: '', valor: '', data: hoje, categoria_id: '' }
 
 export default function FormEntrada({ inicial, onSalvar, onCancelar }) {
   const { categorias } = useApp()
-  const [form, setForm] = useState(inicial || VAZIO)
+  const [form, setForm] = useState(inicial ? {
+    ...inicial,
+    data: toDateStr(inicial.data),
+    categoria_id: inicial.categoria_id || '',
+  } : VAZIO)
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   function submit(e) {

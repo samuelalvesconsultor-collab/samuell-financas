@@ -173,7 +173,7 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDrag
         <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid var(--divider)' }}>
           <button onClick={() => setExpandido(e => !e)}
             className="text-xs text-gray-500 hover:text-gray-200 transition-colors flex items-center gap-1"
-            onMouseDown={e => e.stopPropagation()}>
+            onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
             {expandido ? '▲' : '▼'} {expandido ? 'Ocultar' : 'Ver'} parcelas
           </button>
 
@@ -191,16 +191,16 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDrag
             ) : (
               <button onClick={e => { e.stopPropagation(); setConfirmandoPagar(true) }}
                 className="text-xs text-teal-600 hover:text-teal-400 transition-colors"
-                onMouseDown={e => e.stopPropagation()}>
+                onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
                 Pagar mês
               </button>
             )
           )}
 
           <button onClick={onEdit} className="text-xs text-gray-600 hover:text-gray-300 transition-colors ml-auto"
-            onMouseDown={e => e.stopPropagation()}>Editar</button>
+            onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Editar</button>
           <button onClick={onDelete} className="text-xs text-gray-600 hover:text-red-400 transition-colors"
-            onMouseDown={e => e.stopPropagation()}>Excluir</button>
+            onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Excluir</button>
         </div>
       </div>
 

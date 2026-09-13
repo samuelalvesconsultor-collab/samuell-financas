@@ -102,10 +102,10 @@ function CategoriaCard({ grupo, onEditar, onExcluir, idx, dragOver, onDragStart,
               <div className="flex items-center gap-2 justify-end mt-1">
                 <button onClick={() => onEditar(l)} className="text-[10px] transition-colors"
                   style={{ color: 'var(--text-faint)' }}
-                  onMouseDown={e => e.stopPropagation()}>Editar</button>
+                  onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Editar</button>
                 <button onClick={() => onExcluir(l.id)} className="text-[10px] hover:text-red-400 transition-colors"
                   style={{ color: 'var(--text-faint)' }}
-                  onMouseDown={e => e.stopPropagation()}>Excluir</button>
+                  onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Excluir</button>
               </div>
             </div>
           </div>

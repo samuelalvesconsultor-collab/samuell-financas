@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
 
+const toDateStr = v => (!v ? '' : String(v).slice(0, 10))
+
 const VAZIO = {
   descricao: '', tipo: 'parcelamento', forma_pagamento: 'boleto', valor_parcela: '', num_parcelas: '',
   valor_total: '', parcelas_pagas: 0,
@@ -9,7 +11,12 @@ const VAZIO = {
 
 export default function FormDivida({ inicial, onSalvar, onCancelar }) {
   const { categorias } = useApp()
-  const [form, setForm] = useState(inicial || VAZIO)
+  const [form, setForm] = useState(inicial ? {
+    ...inicial,
+    data_inicio: toDateStr(inicial.data_inicio),
+    data_termino: toDateStr(inicial.data_termino),
+    categoria_id: inicial.categoria_id || '',
+  } : VAZIO)
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   // Calcula valor_total = valor_parcela × num_parcelas

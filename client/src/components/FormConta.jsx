@@ -7,6 +7,8 @@ function getTipoPagamento(inicial) {
   return inicial.tipo_pagamento || 'avista'
 }
 
+const toDateStr = v => (!v ? '' : String(v).slice(0, 10))
+
 export default function FormConta({ inicial, onSalvar, onCancelar }) {
   const { categorias, mesSelecionado } = useApp()
 
@@ -23,7 +25,7 @@ export default function FormConta({ inicial, onSalvar, onCancelar }) {
     forma_pagamento: inicial?.forma_pagamento || 'boleto',
     num_parcelas:    inicial?.num_parcelas    || '',
     cartao_vinculado: inicial?.cartao_vinculado || 'Santander',
-    mes_referencia:  inicial?.mes_referencia  || mesRef,
+    mes_referencia:  toDateStr(inicial?.mes_referencia) || mesRef,
   })
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
