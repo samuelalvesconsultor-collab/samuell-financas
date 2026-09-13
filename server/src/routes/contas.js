@@ -154,12 +154,32 @@ router.put('/:id', async (req, res) => {
 router.patch('/:id/pagar', async (req, res) => {
   const { data_pagamento } = req.body
   try {
+    const dataPag = data_pagamento || new Date().toISOString().split('T')[0]
+
     const { rows } = await pool.query(
       `UPDATE contas SET status='paga', data_pagamento=$1 WHERE id=$2 RETURNING *`,
-      [data_pagamento || new Date().toISOString().split('T')[0], req.params.id]
+      [dataPag, req.params.id]
     )
     if (!rows.length) return res.status(404).json({ error: 'Não encontrado' })
-    res.json(rows[0])
+
+    const conta = rows[0]
+    let vinculadas_pagas = 0
+
+    // Se tem cartão vinculado, paga todas as contas do mesmo cartão no mesmo mês
+    if (conta.cartao_vinculado) {
+      const { rowCount } = await pool.query(
+        `UPDATE contas
+         SET status='paga', data_pagamento=$1
+         WHERE cartao_vinculado = $2
+           AND DATE_TRUNC('month', mes_referencia) = DATE_TRUNC('month', $3::date)
+           AND status != 'paga'
+           AND id != $4`,
+        [dataPag, conta.cartao_vinculado, conta.mes_referencia, conta.id]
+      )
+      vinculadas_pagas = rowCount
+    }
+
+    res.json({ ...conta, vinculadas_pagas })
   } catch (err) {
     res.status(500).json({ erro: err.message })
   }

@@ -508,6 +508,17 @@ export default function Contas() {
               <p className="text-teal-400 font-display font-bold text-xl mt-1 tabular-nums">{BRL(confirmPagar.valor)}</p>
               <p className="text-gray-600 text-xs mt-1">Data: {new Date().toLocaleDateString('pt-BR')}</p>
             </div>
+            {confirmPagar.cartao_vinculado && (
+              <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg"
+                style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                </svg>
+                <p className="text-xs" style={{ color: '#86efac' }}>
+                  Todas as contas vinculadas ao <span className="font-semibold text-green-300">{confirmPagar.cartao_vinculado}</span> neste mês também serão marcadas como pagas.
+                </p>
+              </div>
+            )}
             <div className="flex gap-2 pt-1">
               <button onClick={() => setConfirmPagar(null)} className="btn-ghost">Cancelar</button>
               <button onClick={confirmarPagar} className="btn-primary">Confirmar Pagamento</button>
