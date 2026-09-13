@@ -48,7 +48,7 @@ export default function FormDivida({ inicial, onSalvar, onCancelar }) {
     })
   }
 
-  const cats = categorias.filter(c => !c.arquivada)
+  const cats = categorias.filter(c => !c.arquivada && (c.tipo === 'saida' || c.tipo === 'ambos'))
 
   return (
     <form onSubmit={submit} className="space-y-3">

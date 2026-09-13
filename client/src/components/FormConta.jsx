@@ -28,7 +28,7 @@ export default function FormConta({ inicial, onSalvar, onCancelar }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
-  const cats = categorias.filter(c => !c.arquivada)
+  const cats = categorias.filter(c => !c.arquivada && (c.tipo === 'saida' || c.tipo === 'ambos'))
   const isRec = form.tipo_pagamento === 'recorrente'
   const isParc = form.tipo_pagamento === 'parcelado'
   const isCredito = form.forma_pagamento === 'credito'
