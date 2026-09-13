@@ -10,6 +10,7 @@ router.get('/', async (req, res) => {
     entradas, contasPagas, contasPendentes,
     contasProximas, contasAtrasadas,
     historicoEntradas, historicoSaidas,
+    dividasProximas,
   ] = await Promise.all([
     // Entradas do mês (lançamentos)
     pool.query(
@@ -68,6 +69,23 @@ router.get('/', async (req, res) => {
        AND status='atrasada' AND c.recorrente = false`,
       [mesDate]
     ),
+    // Dívidas com parcela pendente no mês (exclui cartão de crédito)
+    pool.query(
+      `SELECT d.id, d.descricao, d.tipo, d.valor_parcela,
+              p.data_vencimento as proxima_vencimento,
+              cat.nome as categoria_nome
+       FROM dividas d
+       LEFT JOIN categorias cat ON d.categoria_id = cat.id
+       JOIN LATERAL (
+         SELECT data_vencimento FROM parcelas_divida
+         WHERE divida_id = d.id AND status = 'pendente'
+           AND DATE_TRUNC('month', data_vencimento) = DATE_TRUNC('month', $1::date)
+         ORDER BY numero_parcela LIMIT 1
+       ) p ON true
+       WHERE d.ativa = true AND d.tipo != 'cartao'
+       ORDER BY p.data_vencimento ASC`,
+      [mesDate]
+    ),
     // Histórico mensal de entradas (ano inteiro do mês selecionado)
     pool.query(
       `SELECT TO_CHAR(m.mes, 'YYYY-MM') as mes,
@@ -115,6 +133,7 @@ router.get('/', async (req, res) => {
     total_contas_pendentes: parseFloat(contasPendentes.rows[0].total),
     contas_proximas:       contasProximas.rows,
     contas_atrasadas:      contasAtrasadas.rows,
+    dividas_proximas:      dividasProximas.rows,
     historico_mensal,
   })
 })

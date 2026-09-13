@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { getDashboard } from '../api/dashboard'
 import { pagarConta, atualizarConta } from '../api/contas'
+import { registrarParcela } from '../api/dividas'
 import MonthPicker from '../components/MonthPicker'
 import PageHeader from '../components/PageHeader'
 import Modal from '../components/Modal'
@@ -17,6 +18,11 @@ const fmtVencimento = c => {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), c.dia_vencimento))
     .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
 }
+const fmtDate = s => {
+  const d = new Date(s + 'T12:00:00Z')
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+}
+const DIVIDA_TIPO = { financiamento: 'Financiamento', emprestimo: 'Empréstimo', parcelamento: 'Parcelamento' }
 
 function CardEntrada({ titulo, valor }) {
   return (
@@ -97,6 +103,7 @@ export default function Dashboard() {
   const [dados, setDados] = useState(null)
   const [editConta, setEditConta] = useState(null)
   const [pagando, setPagando] = useState(new Set())
+  const [pagandoDivida, setPagandoDivida] = useState(new Set())
 
   const carregar = () => getDashboard(mesSelecionado).then(setDados)
   useEffect(() => { carregar() }, [mesSelecionado])
@@ -112,6 +119,13 @@ export default function Dashboard() {
     await atualizarConta(editConta.id, form)
     setEditConta(null)
     carregar()
+  }
+
+  async function pagarDividaMes(divida) {
+    setPagandoDivida(s => new Set([...s, divida.id]))
+    await registrarParcela(divida.id)
+    await carregar()
+    setPagandoDivida(s => { const n = new Set(s); n.delete(divida.id); return n })
   }
 
   const semDados = dados &&
@@ -167,13 +181,13 @@ export default function Dashboard() {
               </div>
             )}
 
-            {dados.contas_proximas.length > 0 && (
+            {(dados.contas_proximas.length > 0 || (dados.dividas_proximas ?? []).length > 0) && (
               <div className="card-contas-abertas rounded-xl p-4"
                 style={{ background: 'rgba(234,179,8,0.05)', border: '1px solid rgba(234,179,8,0.18)' }}>
                 <h2 className="text-[10px] font-bold tracking-widest text-yellow-400 uppercase mb-3">Contas em Aberto</h2>
                 <div className="space-y-0.5">
                   {dados.contas_proximas.map(c => (
-                    <div key={c.id} className="flex items-center gap-3 py-2.5"
+                    <div key={`conta-${c.id}`} className="flex items-center gap-3 py-2.5"
                       style={{ borderBottom: '1px solid rgba(234,179,8,0.06)' }}>
                       <button
                         onClick={() => marcarContaPaga(c)}
@@ -200,6 +214,30 @@ export default function Dashboard() {
                           <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                         </svg>
                       </button>
+                    </div>
+                  ))}
+                  {(dados.dividas_proximas ?? []).map(d => (
+                    <div key={`divida-${d.id}`} className="flex items-center gap-3 py-2.5"
+                      style={{ borderBottom: '1px solid rgba(234,179,8,0.06)' }}>
+                      <button
+                        onClick={() => pagarDividaMes(d)}
+                        disabled={pagandoDivida.has(d.id)}
+                        className="w-5 h-5 rounded flex items-center justify-center shrink-0 transition-colors"
+                        style={{ border: '1.5px solid rgba(234,179,8,0.4)', background: pagandoDivida.has(d.id) ? 'rgba(0,230,118,0.15)' : 'transparent' }}
+                        title="Pagar parcela">
+                        {pagandoDivida.has(d.id) && (
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00e676" strokeWidth="3">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-yellow-100 truncate">{d.descricao}</p>
+                        <p className="text-[10px] text-yellow-700 mt-0.5">
+                          Vence {fmtDate(d.proxima_vencimento)} · {DIVIDA_TIPO[d.tipo]}
+                        </p>
+                      </div>
+                      <span className="text-sm text-yellow-300 tabular-nums shrink-0">{BRL(d.valor_parcela)}</span>
                     </div>
                   ))}
                 </div>
