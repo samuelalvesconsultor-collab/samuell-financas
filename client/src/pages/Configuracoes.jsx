@@ -300,43 +300,62 @@ export default function Configuracoes({ onLogout }) {
 
         {/* ── Seção 3: Cores dos Indicadores ─────────── */}
         <section>
-          <SecaoTitulo label="Cores dos Indicadores" />
+          <SecaoTitulo label="Etiquetas dos Cards" />
+          <p className="text-[10px] text-gray-600 mb-3 -mt-1 px-1">
+            Olho para ocultar · círculo colorido para mudar a cor
+          </p>
           <div className="space-y-4">
-            {/* Status */}
+            {/* Status de pagamento */}
             <div className="rounded-xl p-4 md:p-5" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
-              <p className="text-xs font-semibold text-gray-400 mb-3">Status de pagamento</p>
+              <p className="text-xs font-semibold text-gray-400 mb-3">Tipo de pagamento</p>
               <div className="space-y-3">
                 {[
-                  { key: 'avista',    label: 'À vista'    },
-                  { key: 'parcelado', label: 'Parcelado'  },
-                  { key: 'recorrente',label: 'Recorrente' },
+                  { key: 'avista',     label: 'À vista'    },
+                  { key: 'parcelado',  label: 'Parcelado'  },
+                  { key: 'recorrente', label: 'Recorrente' },
                 ].map(({ key, label }) => {
                   const coresAtual = config.badge_status_cores || CORES_STATUS_DEFAULT
                   const cor = coresAtual[key] || CORES_STATUS_DEFAULT[key]
+                  const bv = config.badges_visiveis || {}
+                  const visivel = bv[key] !== false
                   return (
                     <div key={key} className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
-                          style={{ background: `${cor}22`, border: `1px solid ${cor}44`, color: cor }}>
-                          {label}
-                        </span>
+                      {/* Badge preview */}
+                      <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full transition-opacity"
+                        style={{ background: `${cor}22`, border: `1px solid ${cor}44`, color: cor, opacity: visivel ? 1 : 0.35 }}>
+                        {label}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        {/* Ocultar/Mostrar */}
+                        <button
+                          onClick={() => {
+                            const nova = { ...(config.badges_visiveis || {}), [key]: !visivel }
+                            atualizarConfig('badges_visiveis', nova)
+                          }}
+                          className={`transition-colors ${visivel ? 'text-gray-400 hover:text-gray-200' : 'text-gray-700 hover:text-gray-500'}`}
+                          title={visivel ? 'Ocultar etiqueta' : 'Mostrar etiqueta'}
+                        >
+                          <EyeIcon off={!visivel} />
+                        </button>
+                        {/* Cor */}
+                        <input
+                          type="color"
+                          value={cor}
+                          onChange={e => {
+                            const nova = { ...coresAtual, [key]: e.target.value }
+                            atualizarConfig('badge_status_cores', nova)
+                          }}
+                          className="w-7 h-7 rounded cursor-pointer border-0 p-0.5"
+                          style={{ background: 'var(--card-alt)' }}
+                          title={`Cor: ${label}`}
+                        />
                       </div>
-                      <input
-                        type="color"
-                        value={cor}
-                        onChange={e => {
-                          const nova = { ...coresAtual, [key]: e.target.value }
-                          atualizarConfig('badge_status_cores', nova)
-                        }}
-                        className="w-8 h-8 rounded cursor-pointer border-0 p-0.5"
-                        style={{ background: 'var(--card-alt)' }}
-                        title={`Cor: ${label}`}
-                      />
                     </div>
                   )
                 })}
               </div>
             </div>
+
             {/* Forma de pagamento */}
             <div className="rounded-xl p-4 md:p-5" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
               <p className="text-xs font-semibold text-gray-400 mb-3">Forma de pagamento</p>
@@ -348,49 +367,43 @@ export default function Configuracoes({ onLogout }) {
                 ].map(({ key, label }) => {
                   const coresAtual = config.badge_forma_cores || CORES_FORMA_DEFAULT
                   const cor = coresAtual[key] || CORES_FORMA_DEFAULT[key]
+                  const bv = config.badges_visiveis || {}
+                  const visivel = bv[key] !== false
                   return (
                     <div key={key} className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
-                          style={{ background: `${cor}22`, border: `1px solid ${cor}44`, color: cor }}>
-                          {label}
-                        </span>
+                      {/* Badge preview */}
+                      <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full transition-opacity"
+                        style={{ background: `${cor}22`, border: `1px solid ${cor}44`, color: cor, opacity: visivel ? 1 : 0.35 }}>
+                        {label}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        {/* Ocultar/Mostrar */}
+                        <button
+                          onClick={() => {
+                            const nova = { ...(config.badges_visiveis || {}), [key]: !visivel }
+                            atualizarConfig('badges_visiveis', nova)
+                          }}
+                          className={`transition-colors ${visivel ? 'text-gray-400 hover:text-gray-200' : 'text-gray-700 hover:text-gray-500'}`}
+                          title={visivel ? 'Ocultar etiqueta' : 'Mostrar etiqueta'}
+                        >
+                          <EyeIcon off={!visivel} />
+                        </button>
+                        {/* Cor */}
+                        <input
+                          type="color"
+                          value={cor}
+                          onChange={e => {
+                            const nova = { ...coresAtual, [key]: e.target.value }
+                            atualizarConfig('badge_forma_cores', nova)
+                          }}
+                          className="w-7 h-7 rounded cursor-pointer border-0 p-0.5"
+                          style={{ background: 'var(--card-alt)' }}
+                          title={`Cor: ${label}`}
+                        />
                       </div>
-                      <input
-                        type="color"
-                        value={cor}
-                        onChange={e => {
-                          const nova = { ...coresAtual, [key]: e.target.value }
-                          atualizarConfig('badge_forma_cores', nova)
-                        }}
-                        className="w-8 h-8 rounded cursor-pointer border-0 p-0.5"
-                        style={{ background: 'var(--card-alt)' }}
-                        title={`Cor: ${label}`}
-                      />
                     </div>
                   )
                 })}
-              </div>
-            </div>
-            {/* Toggle exibir etiquetas */}
-            <div className="rounded-xl p-4 md:p-5" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>Exibir etiquetas</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-faint)' }}>
-                    Mostrar badges de tipo e forma nos cards de Contas
-                  </p>
-                </div>
-                <button
-                  onClick={() => atualizarConfig('exibir_badges', config.exibir_badges === false ? true : false)}
-                  className="relative w-11 h-6 rounded-full transition-colors duration-300 shrink-0"
-                  style={{ background: config.exibir_badges === false ? 'rgba(255,255,255,0.12)' : '#dc2626' }}
-                >
-                  <span
-                    className="absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-300"
-                    style={{ transform: config.exibir_badges === false ? 'translateX(4px)' : 'translateX(21px)' }}
-                  />
-                </button>
               </div>
             </div>
           </div>

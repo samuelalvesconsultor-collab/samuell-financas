@@ -155,7 +155,7 @@ function aplicarOrdem(grupos, ordemSalva) {
   })
 }
 
-function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, onOcultar, idx, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, coresStatus, coresForma, exibirBadges }) {
+function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, onOcultar, idx, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, coresStatus, coresForma, badgesVisiveis }) {
   const { nome, cor: corSalva, itens } = grupo
   const total = itens.reduce((s, c) => s + Number(c.valor), 0)
   const cor   = corCategoria(nome, corSalva)
@@ -228,13 +228,20 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, onOcultar, idx, dr
                 <StatusBadge status={c.status} />
               </div>
               {/* Badges em fileira única */}
-              {exibirBadges !== false && (c.conta_pai_id || c.tipo_pagamento || c.forma_pagamento) && (
-                <div className="flex items-center gap-1 mt-1.5">
-                  {c.conta_pai_id && <RecBadge cartao={c.cartao_vinculado} />}
-                  {c.tipo_pagamento && <TipoBadge tipo={c.tipo_pagamento} cores={coresStatus} />}
-                  {c.forma_pagamento && <FormaBadge forma={c.forma_pagamento} cores={coresForma} />}
-                </div>
-              )}
+              {(() => {
+                const bv = badgesVisiveis || {}
+                const showRec  = c.conta_pai_id != null
+                const showTipo = c.tipo_pagamento && bv[c.tipo_pagamento] !== false
+                const showForma = c.forma_pagamento && bv[c.forma_pagamento] !== false
+                if (!showRec && !showTipo && !showForma) return null
+                return (
+                  <div className="flex items-center gap-1 mt-1.5">
+                    {showRec  && <RecBadge cartao={c.cartao_vinculado} />}
+                    {showTipo && <TipoBadge tipo={c.tipo_pagamento} cores={coresStatus} />}
+                    {showForma && <FormaBadge forma={c.forma_pagamento} cores={coresForma} />}
+                  </div>
+                )
+              })()}
             </div>
             <div className="text-right shrink-0">
               <p className="text-sm font-bold tabular-nums"
@@ -552,7 +559,7 @@ export default function Contas() {
                 onOcultar={ocultarGrupo}
                 coresStatus={config?.badge_status_cores}
                 coresForma={config?.badge_forma_cores}
-                exibirBadges={config?.exibir_badges}
+                badgesVisiveis={config?.badges_visiveis}
               />
             ))
           }
