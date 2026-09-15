@@ -88,6 +88,7 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDrag
   const [expandido, setExpandido] = useState(false)
   const [confirmandoPagar, setConfirmandoPagar] = useState(false)
   const [pagando, setPagando] = useState(false)
+  const dragFromGrip = useRef(false)
 
   const progresso = divida.num_parcelas > 0 ? ((divida.parcelas_pagas || 0) / divida.num_parcelas) * 100 : 0
   const isOver = dragOver === idx
@@ -114,16 +115,20 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDrag
   return (
     <div
       draggable
-      onDragStart={() => onDragStart(idx)}
+      onDragStart={e => {
+        if (!dragFromGrip.current) { e.preventDefault(); return }
+        dragFromGrip.current = false
+        onDragStart(idx)
+      }}
       onDragOver={e => { e.preventDefault(); onDragOver(idx) }}
       onDrop={() => onDrop(idx)}
       onDragEnd={onDragEnd}
-      className="rounded-xl overflow-hidden transition-all duration-150"
+      className="rounded-xl overflow-hidden"
       style={{
         background: 'var(--card)',
         border: `1px solid ${isOver ? 'rgba(220,38,38,0.6)' : 'var(--card-border)'}`,
         boxShadow: isOver ? '0 0 0 2px rgba(220,38,38,0.2)' : 'none',
-        cursor: 'grab',
+        transition: 'border-color 0.15s, box-shadow 0.15s',
       }}
     >
       <div className="p-4">
@@ -131,7 +136,13 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDrag
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <p className="text-white font-medium truncate">{divida.descricao}</p>
-              <span style={{ color: 'var(--text-faint)', flexShrink: 0 }}><GripIcon /></span>
+              <span
+                style={{ color: 'var(--text-faint)', flexShrink: 0, cursor: 'grab' }}
+                onMouseDown={() => { dragFromGrip.current = true }}
+                onMouseLeave={() => { dragFromGrip.current = false }}
+              >
+                <GripIcon />
+              </span>
             </div>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-[10px] text-gray-600 uppercase tracking-wide">{TIPO_LABEL[divida.tipo]}</span>

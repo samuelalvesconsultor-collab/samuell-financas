@@ -60,20 +60,25 @@ function CategoriaCard({ grupo, onEditar, onExcluir, idx, dragOver, onDragStart,
   const total = itens.reduce((s, l) => s + Number(l.valor), 0)
   const cor   = corCategoria(nome, corSalva)
   const isOver = dragOver === idx
+  const dragFromGrip = useRef(false)
 
   return (
     <div
       draggable
-      onDragStart={() => onDragStart(idx)}
+      onDragStart={e => {
+        if (!dragFromGrip.current) { e.preventDefault(); return }
+        dragFromGrip.current = false
+        onDragStart(idx)
+      }}
       onDragOver={e => { e.preventDefault(); onDragOver(idx) }}
       onDrop={() => onDrop(idx)}
       onDragEnd={onDragEnd}
-      className="rounded-2xl flex flex-col overflow-hidden transition-all duration-150"
+      className="rounded-2xl flex flex-col overflow-hidden"
       style={{
         background: 'var(--card)',
         border: `1px solid ${isOver ? cor : 'var(--card-border)'}`,
         boxShadow: isOver ? `0 0 0 2px ${cor}33` : 'none',
-        cursor: 'grab',
+        transition: 'border-color 0.15s, box-shadow 0.15s',
       }}
     >
       <div className="px-4 pt-4 pb-3 flex items-start justify-between">
@@ -83,7 +88,13 @@ function CategoriaCard({ grupo, onEditar, onExcluir, idx, dragOver, onDragStart,
           </p>
           <div className="h-0.5 w-5 rounded-full" style={{ background: cor }} />
         </div>
-        <span style={{ color: 'var(--text-faint)', marginTop: 2 }}><GripIcon /></span>
+        <span
+          style={{ color: 'var(--text-faint)', marginTop: 2, cursor: 'grab' }}
+          onMouseDown={() => { dragFromGrip.current = true }}
+          onMouseLeave={() => { dragFromGrip.current = false }}
+        >
+          <GripIcon />
+        </span>
       </div>
 
       <div className="flex-1 divide-y" style={{ borderColor: 'var(--divider)' }}>

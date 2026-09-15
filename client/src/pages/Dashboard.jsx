@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { getDashboard } from '../api/dashboard'
 import { pagarConta, atualizarConta } from '../api/contas'
@@ -94,6 +95,7 @@ const CARD_MAP = {
 
 export default function Dashboard() {
   const { mesSelecionado, config } = useApp()
+  const navigate = useNavigate()
   const [dados, setDados] = useState(null)
   const [editConta, setEditConta] = useState(null)
   const [pagando, setPagando] = useState(new Set())
@@ -135,7 +137,7 @@ export default function Dashboard() {
           <div className="rounded-xl p-10 text-center"
             style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
             <p className="text-gray-500 text-sm mb-1">Nenhum dado neste mês</p>
-            <button onClick={() => setModalLanc(true)}
+            <button onClick={() => navigate('/lancamentos')}
               className="text-red-500 text-sm hover:text-red-400 underline underline-offset-2">
               Adicionar lançamento
             </button>
