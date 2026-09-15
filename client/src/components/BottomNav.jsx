@@ -20,9 +20,10 @@ const ListIcon = () => (
     <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
   </svg>
 )
-const CardIcon = () => (
+const ReceiptIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+    <path d="M3 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2-3 2-3-2z"/>
+    <line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/>
   </svg>
 )
 const GearIcon = () => (
@@ -35,8 +36,8 @@ const GearIcon = () => (
 const links = [
   { to: '/',            label: 'Dashboard', Icon: DashIcon   },
   { to: '/lancamentos', label: 'Entradas',  Icon: ArrowsIcon },
-  { to: '/contas',      label: 'Contas',    Icon: ListIcon   },
-  { to: '/dividas',     label: 'Dívidas',   Icon: CardIcon   },
+  { to: '/contas',  label: 'Contas',  Icon: ListIcon    },
+  { to: '/gastos',  label: 'Gastos',  Icon: ReceiptIcon },
 ]
 
 // Mobile inclui Config pois não tem rodapé com ícone

@@ -5,7 +5,7 @@ import Nav from './components/BottomNav'
 import Dashboard from './pages/Dashboard'
 import Lancamentos from './pages/Lancamentos'
 import Contas from './pages/Contas'
-import Dividas from './pages/Dividas'
+import Gastos from './pages/Gastos'
 import Categorias from './pages/Categorias'
 import Configuracoes from './pages/Configuracoes'
 
@@ -40,7 +40,8 @@ export default function App() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/lancamentos" element={<Lancamentos />} />
                 <Route path="/contas" element={<Contas />} />
-                <Route path="/dividas" element={<Dividas />} />
+                <Route path="/gastos" element={<Gastos />} />
+                <Route path="/dividas" element={<Navigate to="/contas" replace />} />
                 <Route path="/categorias" element={<Categorias />} />
                 <Route path="/configuracoes" element={<Configuracoes />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
