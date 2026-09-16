@@ -8,7 +8,6 @@ import PageHeader from '../components/PageHeader'
 import Modal from '../components/Modal'
 import FormConta from '../components/FormConta'
 import StatusBadge from '../components/StatusBadge'
-import FAB from '../components/FAB'
 const BRL = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const MESES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const mesLabel = s => MESES_PT[parseInt(s.split('-')[1]) - 1]
@@ -218,7 +217,6 @@ export default function Dashboard() {
         </Modal>
       )}
 
-      <FAB />
     </div>
   )
 }
