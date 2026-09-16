@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useApp, CORES_STATUS_DEFAULT, CORES_FORMA_DEFAULT } from '../context/AppContext'
+import { useApp, CORES_STATUS_DEFAULT, CORES_FORMA_DEFAULT, NAV_PAGES_PADRAO } from '../context/AppContext'
 import { getCategorias, criarCategoria, atualizarCategoria, arquivarCategoria } from '../api/categorias'
 import Modal from '../components/Modal'
 import FormCategoria from '../components/FormCategoria'
@@ -96,6 +96,35 @@ function CatRow({ c, onEdit, onToggleArq, onMudarCor }) {
 
 export default function Configuracoes({ onLogout }) {
   const { config, atualizarConfig, setCategorias } = useApp()
+
+  // --- Páginas state ---
+  const [paginas, setPaginas] = useState(config.nav_pages || NAV_PAGES_PADRAO)
+  const [salvandoPaginas, setSalvandoPaginas] = useState(false)
+
+  useEffect(() => {
+    setPaginas(config.nav_pages || NAV_PAGES_PADRAO)
+  }, [config.nav_pages])
+
+  const paginasOrdenadas = [...paginas].sort((a, b) => a.ordem - b.ordem)
+
+  async function salvarPaginas(novasPaginas) {
+    setSalvandoPaginas(true)
+    await atualizarConfig('nav_pages', novasPaginas)
+    setPaginas(novasPaginas)
+    setSalvandoPaginas(false)
+  }
+
+  function moverPagina(idx, dir) {
+    const arr = [...paginasOrdenadas]
+    const alvo = idx + dir
+    if (alvo < 0 || alvo >= arr.length) return
+    ;[arr[idx], arr[alvo]] = [arr[alvo], arr[idx]]
+    salvarPaginas(arr.map((p, i) => ({ ...p, ordem: i })))
+  }
+
+  function toggleVisivelPagina(id) {
+    salvarPaginas(paginas.map(p => p.id === id ? { ...p, visivel: !p.visivel } : p))
+  }
 
   // --- Cards state ---
   const [cards, setCards] = useState(config.dashboard_cards || [])
@@ -215,7 +244,65 @@ export default function Configuracoes({ onLogout }) {
           </div>
         </section>
 
-        {/* ── Seção 2: Cards do Dashboard ───────────── */}
+        {/* ── Seção 2: Páginas do App ──────────────── */}
+        <section>
+          <SecaoTitulo label="Páginas do App" />
+          <div className="space-y-2">
+            {paginasOrdenadas.map((pag, idx) => (
+              <div
+                key={pag.id}
+                className="rounded-xl px-4 py-3 flex items-center gap-3"
+                style={{
+                  background: 'var(--card)',
+                  border: '1px solid var(--card-border)',
+                  opacity: pag.visivel !== false ? 1 : 0.45,
+                  transition: 'opacity 0.2s',
+                }}
+              >
+                {/* Setas cima/baixo */}
+                <div className="flex flex-col gap-0.5 shrink-0">
+                  <button
+                    onClick={() => moverPagina(idx, -1)}
+                    disabled={idx === 0 || salvandoPaginas}
+                    className="text-gray-600 hover:text-gray-300 disabled:opacity-20 disabled:cursor-not-allowed transition-colors leading-none"
+                    title="Mover para cima"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+                  </button>
+                  <button
+                    onClick={() => moverPagina(idx, 1)}
+                    disabled={idx === paginasOrdenadas.length - 1 || salvandoPaginas}
+                    className="text-gray-600 hover:text-gray-300 disabled:opacity-20 disabled:cursor-not-allowed transition-colors leading-none"
+                    title="Mover para baixo"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                </div>
+
+                {/* Número de ordem */}
+                <span className="text-[10px] text-gray-600 tabular-nums w-3 shrink-0">{idx + 1}</span>
+
+                {/* Nome da página */}
+                <p className="flex-1 text-white text-sm">{pag.label}</p>
+
+                {/* Toggle visível */}
+                <button
+                  onClick={() => toggleVisivelPagina(pag.id)}
+                  disabled={salvandoPaginas}
+                  className={`shrink-0 transition-colors ${pag.visivel !== false ? 'text-gray-400 hover:text-gray-200' : 'text-gray-700 hover:text-gray-500'}`}
+                  title={pag.visivel !== false ? 'Ocultar página' : 'Mostrar página'}
+                >
+                  <EyeIcon off={pag.visivel === false} />
+                </button>
+              </div>
+            ))}
+            <p className="text-[10px] text-gray-600 px-1 pt-1">
+              Use as setas para reordenar · olho para ocultar da navegação
+            </p>
+          </div>
+        </section>
+
+        {/* ── Seção 3: Cards do Dashboard ───────────── */}
         <section>
           <SecaoTitulo label="Cards do Dashboard" />
           <div className="space-y-2">

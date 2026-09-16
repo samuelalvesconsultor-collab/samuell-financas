@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
+import { NAV_PAGES_PADRAO } from '../context/AppContext'
 
+/* ── Icons ─────────────────────────────────────────── */
 const DashIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
     <rect x="3" y="3" width="8" height="8" rx="1.5"/>
@@ -33,21 +36,25 @@ const GearIcon = () => (
   </svg>
 )
 
-const links = [
-  { to: '/',            label: 'Dashboard', Icon: DashIcon   },
-  { to: '/lancamentos', label: 'Entradas',  Icon: ArrowsIcon },
-  { to: '/contas',  label: 'Contas',  Icon: ListIcon    },
-  { to: '/gastos',  label: 'Gastos',  Icon: ReceiptIcon },
-]
-
-// Mobile inclui Config pois não tem rodapé com ícone
-const linksMobile = [
-  ...links,
-  { to: '/configuracoes', label: 'Config', Icon: GearIcon },
-]
+/* Mapeamento estático: id → rota + ícone */
+const PAGE_META = {
+  dashboard:   { to: '/',            Icon: DashIcon,    end: true  },
+  lancamentos: { to: '/lancamentos', Icon: ArrowsIcon,  end: false },
+  contas:      { to: '/contas',      Icon: ListIcon,    end: false },
+  gastos:      { to: '/gastos',      Icon: ReceiptIcon, end: false },
+}
 
 export default function Nav() {
+  const { config } = useApp()
   const [expanded, setExpanded] = useState(false)
+
+  /* Monta links na ordem e visibilidade do config */
+  const navPages = [...(config.nav_pages || NAV_PAGES_PADRAO)]
+    .sort((a, b) => a.ordem - b.ordem)
+    .filter(p => p.visivel !== false && PAGE_META[p.id])
+    .map(p => ({ ...PAGE_META[p.id], label: p.label, id: p.id }))
+
+  const linksMobile = [...navPages, { to: '/configuracoes', label: 'Config', Icon: GearIcon, end: false }]
 
   return (
     <>
@@ -76,17 +83,17 @@ export default function Nav() {
           </div>
         </div>
 
-        {/* Nav links */}
+        {/* Nav links dinâmicos */}
         <nav className="flex flex-col flex-1 px-2 py-3 gap-0.5 overflow-y-auto overflow-x-hidden">
           <p className="text-[9px] font-bold tracking-[0.15em] text-gray-600 uppercase px-3 py-2 mt-1 whitespace-nowrap overflow-hidden transition-opacity duration-200"
             style={{ opacity: expanded ? 1 : 0 }}>
             Principal
           </p>
-          {links.map(({ to, label, Icon }) => (
+          {navPages.map(({ to, label, Icon, end }) => (
             <NavLink
               key={to}
               to={to}
-              end={to === '/'}
+              end={end}
               className={({ isActive }) =>
                 `flex items-center gap-3 py-2.5 rounded-lg text-sm transition-colors whitespace-nowrap overflow-hidden ${
                   isActive ? 'text-white' : 'text-gray-500 hover:text-gray-300'
@@ -104,7 +111,7 @@ export default function Nav() {
           ))}
         </nav>
 
-        {/* User footer */}
+        {/* User footer com Config */}
         <div className="px-2 py-3 shrink-0" style={{ borderTop: '1px solid var(--card-border)' }}>
           <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg overflow-hidden"
             style={{ background: 'var(--chip-bg)' }}>
@@ -140,11 +147,11 @@ export default function Nav() {
           borderTop: '1px solid var(--card-border)',
         }}
       >
-        {linksMobile.map(({ to, label, Icon }) => (
+        {linksMobile.map(({ to, label, Icon, end }) => (
           <NavLink
             key={to}
             to={to}
-            end={to === '/'}
+            end={end}
             className={({ isActive }) =>
               `flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] transition-colors ${
                 isActive ? 'text-red-500' : 'text-gray-600'

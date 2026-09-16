@@ -13,6 +13,13 @@ const CARDS_PADRAO = [
   { id: 'contas_pendentes', titulo: 'Contas Pendentes',  visivel: true, ordem: 2 },
 ]
 
+export const NAV_PAGES_PADRAO = [
+  { id: 'dashboard',   label: 'Dashboard', visivel: true, ordem: 0 },
+  { id: 'lancamentos', label: 'Entradas',  visivel: true, ordem: 1 },
+  { id: 'contas',      label: 'Contas',    visivel: true, ordem: 2 },
+  { id: 'gastos',      label: 'Gastos',    visivel: true, ordem: 3 },
+]
+
 export function AppProvider({ children }) {
   const now = new Date()
   const [mesSelecionado, setMesSelecionado] = useState(
@@ -38,6 +45,9 @@ export function AppProvider({ children }) {
           dashboard_cards: Array.isArray(data.dashboard_cards) && data.dashboard_cards.length > 0
             ? data.dashboard_cards
             : CARDS_PADRAO,
+          nav_pages: Array.isArray(data.nav_pages) && data.nav_pages.length > 0
+            ? data.nav_pages
+            : NAV_PAGES_PADRAO,
           badge_status_cores: data.badge_status_cores || CORES_STATUS_DEFAULT,
           badge_forma_cores:  data.badge_forma_cores  || CORES_FORMA_DEFAULT,
         }))
