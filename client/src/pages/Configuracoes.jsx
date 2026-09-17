@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useApp, CORES_STATUS_DEFAULT, CORES_FORMA_DEFAULT, NAV_PAGES_PADRAO } from '../context/AppContext'
 import { getCategorias, criarCategoria, atualizarCategoria, arquivarCategoria } from '../api/categorias'
 import Modal from '../components/Modal'
 import FormCategoria from '../components/FormCategoria'
 import PageHeader from '../components/PageHeader'
+import { PinPad, pinAtivo, definirPin, verificarPin, removerPin } from '../components/LockScreen'
 
 const TIPO_LABEL = { entrada: 'Entrada', saida: 'Saída', ambos: 'Ambos' }
 const TIPO_COR   = {
@@ -91,6 +92,192 @@ function CatRow({ c, onEdit, onToggleArq, onMudarCor }) {
         </button>
       </div>
     </div>
+  )
+}
+
+/* ── Seção PIN ─────────────────────────────────────────────────── */
+
+const ETAPAS = { idle: 'idle', definir1: 'definir1', definir2: 'definir2', confirmar: 'confirmar', alterar1: 'alterar1', alterar2: 'alterar2', alterar3: 'alterar3' }
+
+function PinSection() {
+  const [ativo, setAtivo] = useState(pinAtivo())
+  const [etapa, setEtapa] = useState(ETAPAS.idle)
+  const [pin1, setPin1] = useState('')
+  const [pin2, setPin2] = useState('')
+  const [pinAtual, setPinAtual] = useState('')
+  const [erro, setErro] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  function resetar() {
+    setPin1(''); setPin2(''); setPinAtual('')
+    setErro(false); setMsg(''); setEtapa(ETAPAS.idle)
+  }
+
+  function flash(texto) {
+    setMsg(texto)
+    setTimeout(() => setMsg(''), 3000)
+  }
+
+  /* ── Fluxo: ativar PIN ── */
+  async function concluirDefinicao(confirma) {
+    if (confirma !== pin1) {
+      setErro(true)
+      setTimeout(() => { setErro(false); setPin2('') }, 650)
+      return
+    }
+    await definirPin(pin1)
+    setAtivo(true)
+    window.dispatchEvent(new Event('pin-alterado'))
+    flash('PIN ativado com sucesso!')
+    resetar()
+  }
+
+  /* ── Fluxo: remover PIN ── */
+  async function concluirRemocao(digitado) {
+    const ok = await verificarPin(digitado)
+    if (!ok) {
+      setErro(true)
+      setTimeout(() => { setErro(false); setPinAtual('') }, 650)
+      return
+    }
+    removerPin()
+    setAtivo(false)
+    window.dispatchEvent(new Event('pin-alterado'))
+    flash('PIN removido.')
+    resetar()
+  }
+
+  /* ── Fluxo: alterar PIN ── */
+  async function verificarAntigoPinAlteracao(digitado) {
+    const ok = await verificarPin(digitado)
+    if (!ok) {
+      setErro(true)
+      setTimeout(() => { setErro(false); setPinAtual('') }, 650)
+      return
+    }
+    setErro(false)
+    setEtapa(ETAPAS.alterar2)
+  }
+
+  async function concluirAlteracao(confirma) {
+    if (confirma !== pin1) {
+      setErro(true)
+      setTimeout(() => { setErro(false); setPin2('') }, 650)
+      return
+    }
+    await definirPin(pin1)
+    window.dispatchEvent(new Event('pin-alterado'))
+    flash('PIN alterado com sucesso!')
+    resetar()
+  }
+
+  const titulo = {
+    [ETAPAS.definir1]: 'Defina seu PIN',
+    [ETAPAS.definir2]: 'Confirme o PIN',
+    [ETAPAS.confirmar]: 'Confirme seu PIN atual para remover',
+    [ETAPAS.alterar1]: 'Digite o PIN atual',
+    [ETAPAS.alterar2]: 'Digite o novo PIN',
+    [ETAPAS.alterar3]: 'Confirme o novo PIN',
+  }[etapa]
+
+  const subtitulo = {
+    [ETAPAS.definir1]: 'Escolha 4 dígitos',
+    [ETAPAS.definir2]: 'Repita os 4 dígitos',
+    [ETAPAS.confirmar]: '4 dígitos para confirmar',
+    [ETAPAS.alterar1]: '4 dígitos do PIN atual',
+    [ETAPAS.alterar2]: 'Novo PIN com 4 dígitos',
+    [ETAPAS.alterar3]: 'Repita o novo PIN',
+  }[etapa]
+
+  return (
+    <section>
+      <SecaoTitulo label="Segurança" />
+      <div className="rounded-xl p-4 md:p-5 space-y-4" style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
+
+        {/* Status + botões */}
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-white text-sm font-medium">Bloqueio por PIN</p>
+            <p className="text-gray-500 text-xs mt-0.5">
+              {ativo ? 'PIN ativo — o app bloqueia ao sair' : 'Sem proteção por PIN'}
+            </p>
+          </div>
+          {!ativo ? (
+            <button
+              onClick={() => setEtapa(ETAPAS.definir1)}
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              style={{ background: 'rgba(220,38,38,0.15)', color: '#f87171', border: '1px solid rgba(220,38,38,0.3)' }}
+            >
+              Ativar
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEtapa(ETAPAS.alterar1)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-faint)', border: '1px solid var(--card-border)' }}
+              >
+                Alterar
+              </button>
+              <button
+                onClick={() => setEtapa(ETAPAS.confirmar)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                style={{ background: 'rgba(220,38,38,0.1)', color: '#f87171', border: '1px solid rgba(220,38,38,0.25)' }}
+              >
+                Remover
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Feedback */}
+        {msg && (
+          <p className="text-xs text-teal-400 text-center">{msg}</p>
+        )}
+
+        {/* Numpad inline */}
+        {etapa !== ETAPAS.idle && (
+          <div className="pt-2 border-t border-white/5">
+            <p className="text-white text-sm font-medium text-center mb-0.5">{titulo}</p>
+            <p className="text-gray-500 text-xs text-center mb-5">{subtitulo}</p>
+            <div className="flex justify-center">
+              <PinPad
+                pin={
+                  etapa === ETAPAS.definir1 ? pin1 :
+                  etapa === ETAPAS.definir2 ? pin2 :
+                  etapa === ETAPAS.confirmar ? pinAtual :
+                  etapa === ETAPAS.alterar1 ? pinAtual :
+                  etapa === ETAPAS.alterar2 ? pin1 :
+                  pin2
+                }
+                setPin={
+                  etapa === ETAPAS.definir1 ? setPin1 :
+                  etapa === ETAPAS.definir2 ? setPin2 :
+                  etapa === ETAPAS.confirmar ? setPinAtual :
+                  etapa === ETAPAS.alterar1 ? setPinAtual :
+                  etapa === ETAPAS.alterar2 ? setPin1 :
+                  setPin2
+                }
+                onComplete={
+                  etapa === ETAPAS.definir1 ? () => setEtapa(ETAPAS.definir2) :
+                  etapa === ETAPAS.definir2 ? concluirDefinicao :
+                  etapa === ETAPAS.confirmar ? concluirRemocao :
+                  etapa === ETAPAS.alterar1 ? verificarAntigoPinAlteracao :
+                  etapa === ETAPAS.alterar2 ? () => setEtapa(ETAPAS.alterar3) :
+                  concluirAlteracao
+                }
+                erro={erro}
+              />
+            </div>
+            <div className="flex justify-center mt-5">
+              <button onClick={resetar} className="text-xs text-gray-600 hover:text-gray-400 transition-colors">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
   )
 }
 
@@ -496,7 +683,10 @@ export default function Configuracoes({ onLogout }) {
           </div>
         </section>
 
-        {/* ── Seção 5: Categorias ────────────────────── */}
+        {/* ── Seção 5: Segurança (PIN) ──────────────── */}
+        <PinSection />
+
+        {/* ── Seção 6: Categorias ────────────────────── */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <SecaoTitulo label="Categorias" />
