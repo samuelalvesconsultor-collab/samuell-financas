@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
+import { getCartoes } from '../api/cartoes'
 
 const toDateStr = v => (!v ? '' : String(v).slice(0, 10))
 
@@ -7,17 +8,25 @@ const VAZIO = {
   descricao: '', tipo: 'parcelamento', forma_pagamento: 'boleto', valor_parcela: '', num_parcelas: '',
   valor_total: '', parcelas_pagas: 0,
   data_inicio: new Date().toISOString().split('T')[0], data_termino: '', categoria_id: '',
+  cartao_id: '',
 }
 
 export default function FormDivida({ inicial, onSalvar, onCancelar }) {
   const { categorias } = useApp()
   const [form, setForm] = useState(inicial ? {
+    ...VAZIO,
     ...inicial,
     data_inicio: toDateStr(inicial.data_inicio),
     data_termino: toDateStr(inicial.data_termino),
     categoria_id: inicial.categoria_id || '',
+    cartao_id: inicial.cartao_id || '',
   } : VAZIO)
+  const [cartoes, setCartoes] = useState([])
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  useEffect(() => {
+    getCartoes().then(setCartoes).catch(() => {})
+  }, [])
 
   // Calcula valor_total = valor_parcela × num_parcelas
   useEffect(() => {
@@ -41,6 +50,10 @@ export default function FormDivida({ inicial, onSalvar, onCancelar }) {
     }
   }, [form.data_inicio, form.num_parcelas])
 
+  const mostrarCartao = form.tipo === 'cartao' ||
+    form.forma_pagamento === 'cartao_credito' ||
+    cartoes.some(c => c.nome?.trim().toLowerCase() === (inicial?.categoria_nome || '').trim().toLowerCase())
+
   function submit(e) {
     e.preventDefault()
     const vp = parseFloat(form.valor_parcela)
@@ -52,6 +65,7 @@ export default function FormDivida({ inicial, onSalvar, onCancelar }) {
       valor_total: parseFloat(form.valor_total) || vp * np,
       parcelas_pagas: parseInt(form.parcelas_pagas) || 0,
       categoria_id: form.categoria_id || null,
+      cartao_id: form.cartao_id ? Number(form.cartao_id) : null,
     })
   }
 
@@ -75,7 +89,20 @@ export default function FormDivida({ inicial, onSalvar, onCancelar }) {
         </select>
       </div>
 
-      {/* Parcela (input) + Nº Parcelas (input) */}
+      {/* Seletor de cartão — aparece quando tipo=cartao ou forma=cartao_credito */}
+      {(form.tipo === 'cartao' || form.forma_pagamento === 'cartao_credito') && cartoes.length > 0 && (
+        <div>
+          <label className="text-[10px] text-gray-500 uppercase tracking-widest mb-1 block">Cartão</label>
+          <select value={form.cartao_id} onChange={e => set('cartao_id', e.target.value)} className="select-dark">
+            <option value="">Selecione um cartão</option>
+            {cartoes.map(c => (
+              <option key={c.id} value={c.id}>{c.nome.trim()}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Parcela + Nº Parcelas */}
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="text-[10px] text-gray-600 uppercase tracking-widest mb-1 block">Valor da Parcela</label>
@@ -99,7 +126,7 @@ export default function FormDivida({ inicial, onSalvar, onCancelar }) {
           className="input-dark opacity-60 cursor-default" />
       </div>
 
-      {/* 1ª Parcela (input) + Término (calculado) */}
+      {/* 1ª Parcela + Término */}
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="text-[10px] text-gray-600 uppercase tracking-widest mb-1 block">1ª Parcela</label>

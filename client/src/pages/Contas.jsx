@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { getContas, criarConta, atualizarConta, deletarConta, pagarConta } from '../api/contas'
-import { getDividas, criarDivida, atualizarDivida, deletarDivida, getParcelas, pagarParcela, registrarParcela } from '../api/dividas'
+import { getDividas, criarDivida, atualizarDivida, deletarDivida } from '../api/dividas'
 import { getConfiguracoes, patchConfiguracao } from '../api/configuracoes'
 import { getDashboard } from '../api/dashboard'
 import { getCartoes, criarCartao, atualizarCartao, deletarCartao, getGastosCartao } from '../api/cartoes'
@@ -10,6 +10,7 @@ import Modal from '../components/Modal'
 import FormConta from '../components/FormConta'
 import FormDivida from '../components/FormDivida'
 import FormCartao from '../components/FormCartao'
+import DividaCard from '../components/DividaCard'
 import StatusBadge from '../components/StatusBadge'
 import CategoryBadge from '../components/CategoryBadge'
 import MonthPicker from '../components/MonthPicker'
@@ -22,12 +23,6 @@ const VERM        = '#ff1744'
 const VERM_BG     = 'rgba(255,23,68,0.06)'
 const VERM_BORDER = 'rgba(255,23,68,0.2)'
 
-const fmtDateDivida = s => {
-  if (!s) return '—'
-  const d = new Date(s)
-  d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
-  return d.toLocaleDateString('pt-BR')
-}
 
 function corCategoria(nome, cor) {
   if (cor) return cor
@@ -49,7 +44,6 @@ const RecBadge = ({ cartao }) => (
 
 const TIPO_LABEL = { avista: 'À vista', parcelado: 'Parcelado', recorrente: 'Recorrente' }
 const FORMA_LABEL = { credito: 'Crédito', boleto: 'Boleto', pix: 'PIX' }
-const TIPO_DIVIDA_LABEL = { cartao: 'Cartão', financiamento: 'Financiamento', emprestimo: 'Empréstimo', parcelamento: 'Parcelamento' }
 
 function TipoBadge({ tipo, cores }) {
   const label = TIPO_LABEL[tipo]
@@ -77,13 +71,6 @@ function FormaBadge({ forma, cores }) {
 
 /* ── Icons ─────────────────────────────────────────── */
 
-const GripIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-    <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
-    <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
-    <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
-  </svg>
-)
 
 const EyeOffIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -307,199 +294,6 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, onOcultar, idx, dr
   )
 }
 
-/* ── Tab: Dívidas — components ────────────────────────── */
-
-function Parcelas({ divida, onPagar }) {
-  const [parcelas, setParcelas] = useState(null)
-  const [confirmando, setConfirmando] = useState(null)
-
-  useEffect(() => { getParcelas(divida.id).then(setParcelas) }, [divida.id])
-
-  async function pagar(p) {
-    await pagarParcela(p.id, new Date().toISOString().split('T')[0])
-    setConfirmando(null)
-    getParcelas(divida.id).then(setParcelas)
-    onPagar()
-  }
-
-  if (!parcelas) return <div className="text-gray-600 text-xs py-2">Carregando parcelas...</div>
-
-  return (
-    <div className="mt-4">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">Parcelas</p>
-        <p className="text-xs text-gray-500">
-          Saldo devedor: <span className="text-red-400 font-semibold tabular-nums">{BRL(divida.saldo_devedor)}</span>
-        </p>
-      </div>
-      <div className="space-y-1.5">
-        {parcelas.map(p => (
-          <div key={p.id} className="flex items-center justify-between py-2 px-3 rounded-lg"
-            style={{ background: 'var(--card-highlight)', border: '1px solid var(--divider)' }}>
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] text-gray-600 tabular-nums w-4">#{p.numero_parcela}</span>
-              <span className="text-xs text-gray-400">{fmtDateDivida(p.data_vencimento)}</span>
-              <span className="text-xs text-white tabular-nums font-medium">{BRL(p.valor)}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              {p.status === 'paga'
-                ? <StatusBadge status="paga" />
-                : confirmando === p.id
-                  ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">Confirmar?</span>
-                      <button onClick={() => pagar(p)} className="text-xs text-teal-400 hover:text-teal-300 font-medium">Sim</button>
-                      <button onClick={() => setConfirmando(null)} className="text-xs text-gray-600 hover:text-gray-400">Não</button>
-                    </div>
-                  )
-                  : <button onClick={() => setConfirmando(p.id)} className="text-xs text-teal-500 hover:text-teal-400 transition-colors">Pagar</button>
-              }
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDragStart, onDragOver, onDrop, onDragEnd }) {
-  const [expandido, setExpandido] = useState(false)
-  const [confirmandoPagar, setConfirmandoPagar] = useState(false)
-  const [pagando, setPagando] = useState(false)
-  const dragFromGrip = useRef(false)
-
-  const progresso = divida.num_parcelas > 0 ? ((divida.parcelas_pagas || 0) / divida.num_parcelas) * 100 : 0
-  const isOver = dragOver === idx
-  const temPendente = divida.ativa && (divida.parcelas_pagas || 0) < divida.num_parcelas
-
-  const hoje = new Date()
-  const mesHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`
-  const mesProxVenc = divida.proxima_vencimento ? divida.proxima_vencimento.slice(0, 7) : null
-  const mesPago = divida.parcelas_pagas > 0 && (mesProxVenc === null || mesProxVenc > mesHoje)
-
-  async function pagarMes(e) {
-    e.stopPropagation()
-    setPagando(true)
-    try {
-      await registrarParcela(divida.id)
-      setConfirmandoPagar(false)
-      onRefresh()
-    } finally {
-      setPagando(false)
-    }
-  }
-
-  return (
-    <div
-      draggable
-      onDragStart={e => {
-        if (!dragFromGrip.current) { e.preventDefault(); return }
-        dragFromGrip.current = false
-        onDragStart(idx)
-      }}
-      onDragOver={e => { e.preventDefault(); onDragOver(idx) }}
-      onDrop={() => onDrop(idx)}
-      onDragEnd={onDragEnd}
-      className="rounded-xl overflow-hidden"
-      style={{
-        background: 'var(--card)',
-        border: `1px solid ${isOver ? 'rgba(220,38,38,0.6)' : 'var(--card-border)'}`,
-        boxShadow: isOver ? '0 0 0 2px rgba(220,38,38,0.2)' : 'none',
-        transition: 'border-color 0.15s, box-shadow 0.15s',
-      }}
-    >
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="text-white font-medium truncate">{divida.descricao}</p>
-              <span
-                style={{ color: 'var(--text-faint)', flexShrink: 0, cursor: 'grab' }}
-                onMouseDown={() => { dragFromGrip.current = true }}
-                onMouseLeave={() => { dragFromGrip.current = false }}
-              >
-                <GripIcon />
-              </span>
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] text-gray-600 uppercase tracking-wide">{TIPO_DIVIDA_LABEL[divida.tipo]}</span>
-              {divida.categoria_nome && <CategoryBadge nome={divida.categoria_nome} />}
-            </div>
-          </div>
-          <div className="text-right shrink-0 ml-3">
-            <p className="text-[10px] text-gray-600 uppercase tracking-wide mb-0.5">Parcela</p>
-            <p className="font-bold tabular-nums" style={mesPago
-              ? { color: '#22c55e', textShadow: '0 0 10px rgba(34,197,94,0.35)' }
-              : { color: 'var(--text)' }}>
-              {BRL(divida.valor_parcela)}
-            </p>
-            {divida.proxima_vencimento && (
-              <p className="text-[10px] text-gray-600 mt-0.5">vence {fmtDateDivida(divida.proxima_vencimento)}</p>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <div className="flex justify-between text-[10px] text-gray-600 mb-1.5">
-            <span>{divida.parcelas_pagas || 0} de {divida.num_parcelas} parcelas</span>
-            <span>{Math.max(0, divida.num_parcelas - (divida.parcelas_pagas || 0))} restantes</span>
-          </div>
-          <div className="h-1.5 rounded-full" style={{ background: 'var(--progress-track)' }}>
-            <div className="h-1.5 rounded-full bg-red-600 transition-all" style={{ width: `${progresso}%` }} />
-          </div>
-        </div>
-
-        {Number(divida.saldo_devedor) > 0 && (
-          <div className="flex justify-end mt-2">
-            <span className="text-[10px] tabular-nums" style={{ color: 'rgba(239,68,68,0.55)' }}>
-              saldo devedor {BRL(divida.saldo_devedor)}
-            </span>
-          </div>
-        )}
-
-        <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid var(--divider)' }}>
-          <button onClick={() => setExpandido(e => !e)}
-            className="text-xs text-gray-500 hover:text-gray-200 transition-colors flex items-center gap-1"
-            onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
-            {expandido ? '▲' : '▼'} {expandido ? 'Ocultar' : 'Ver'} parcelas
-          </button>
-
-          {temPendente && (
-            confirmandoPagar ? (
-              <div className="flex items-center gap-2" onMouseDown={e => e.stopPropagation()}>
-                <span className="text-[11px] text-gray-400">Confirmar?</span>
-                <button onClick={pagarMes} disabled={pagando}
-                  className="text-[11px] text-teal-400 hover:text-teal-300 font-semibold transition-colors">
-                  {pagando ? '...' : 'Sim'}
-                </button>
-                <button onClick={e => { e.stopPropagation(); setConfirmandoPagar(false) }}
-                  className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors">Não</button>
-              </div>
-            ) : (
-              <button onClick={e => { e.stopPropagation(); setConfirmandoPagar(true) }}
-                className="text-xs text-teal-600 hover:text-teal-400 transition-colors"
-                onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
-                Pagar mês
-              </button>
-            )
-          )}
-
-          <button onClick={onEdit} className="text-xs text-gray-600 hover:text-gray-300 transition-colors ml-auto"
-            onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Editar</button>
-          <button onClick={onDelete} className="text-xs text-gray-600 hover:text-red-400 transition-colors"
-            onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Excluir</button>
-        </div>
-      </div>
-
-      {expandido && (
-        <div className="px-4 pb-4" style={{ borderTop: '1px solid var(--divider)' }}>
-          <Parcelas divida={divida} onPagar={onRefresh} />
-        </div>
-      )}
-    </div>
-  )
-}
-
 /* ── Tab: Cartões — CartaoCard ───────────────────────── */
 
 const CAT_CORES_GASTO = {
@@ -516,13 +310,18 @@ const fmtDataGasto = s => {
   return d.toLocaleDateString('pt-BR')
 }
 
-function CartaoCard({ cartao, contas, mes, onEditar, onExcluir }) {
+function CartaoCard({ cartao, contas, mes, onEditar, onExcluir, onEditarDivida, onExcluirDivida }) {
   const [gastos, setGastos] = useState([])
+  const [dividasCartao, setDividasCartao] = useState([])
   const [expandido, setExpandido] = useState(true)
   const cor = cartao.cor || '#6366f1'
 
+  const carregarDividasCartao = () =>
+    getDividas(true, cartao.id).then(setDividasCartao).catch(() => {})
+
   useEffect(() => {
     getGastosCartao(cartao.id, mes).then(setGastos).catch(() => {})
+    carregarDividasCartao()
   }, [cartao.id, mes])
 
   const assinaturas = contas.filter(
@@ -531,7 +330,8 @@ function CartaoCard({ cartao, contas, mes, onEditar, onExcluir }) {
 
   const totalAssinaturas = assinaturas.reduce((s, c) => s + Number(c.valor), 0)
   const totalGastos = gastos.reduce((s, g) => s + Number(g.valor), 0)
-  const total = totalAssinaturas + totalGastos
+  const totalDividas = dividasCartao.reduce((s, d) => s + Number(d.valor_parcela), 0)
+  const total = totalAssinaturas + totalGastos + totalDividas
 
   return (
     <div className="rounded-2xl overflow-hidden"
@@ -598,6 +398,32 @@ function CartaoCard({ cartao, contas, mes, onEditar, onExcluir }) {
             </div>
           )}
 
+          {/* Parcelamentos vinculados */}
+          {dividasCartao.length > 0 && (
+            <div>
+              <div className="px-4 py-2 flex items-center justify-between"
+                style={{ borderBottom: '1px solid var(--divider)', borderTop: assinaturas.length > 0 ? '1px solid var(--divider)' : 'none' }}>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: cor }}>
+                  Parcelamentos
+                </p>
+                <span className="text-[10px] tabular-nums font-semibold" style={{ color: cor }}>
+                  {BRL(totalDividas)}/mês
+                </span>
+              </div>
+              <div className="px-3 py-2 space-y-2">
+                {dividasCartao.map(d => (
+                  <DividaCard
+                    key={d.id}
+                    divida={d}
+                    onEdit={() => onEditarDivida(d)}
+                    onDelete={() => onExcluirDivida(d.id, carregarDividasCartao)}
+                    onRefresh={carregarDividasCartao}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Gastos do mês */}
           {gastos.length > 0 && (
             <div>
@@ -637,9 +463,9 @@ function CartaoCard({ cartao, contas, mes, onEditar, onExcluir }) {
             </div>
           )}
 
-          {assinaturas.length === 0 && gastos.length === 0 && (
+          {assinaturas.length === 0 && gastos.length === 0 && dividasCartao.length === 0 && (
             <p className="px-4 py-4 text-xs text-center" style={{ color: 'var(--text-faint)' }}>
-              Nenhum gasto ou assinatura neste mês.
+              Nenhum gasto, assinatura ou parcelamento neste mês.
             </p>
           )}
         </div>
@@ -1182,6 +1008,13 @@ export default function Contas() {
                   mes={mesSelecionado}
                   onEditar={setModalCartao}
                   onExcluir={excluirCartao}
+                  onEditarDivida={setModalDivida}
+                  onExcluirDivida={async (id, refresh) => {
+                    if (!confirm('Excluir dívida e todas as parcelas?')) return
+                    await deletarDivida(id)
+                    refresh()
+                    carregarDividas()
+                  }}
                 />
               ))}
             </div>

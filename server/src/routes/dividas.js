@@ -3,7 +3,7 @@ const router = express.Router()
 const pool = require('../db')
 
 router.get('/', async (req, res) => {
-  const { ativa } = req.query
+  const { ativa, cartao_id } = req.query
   let sql = `
     SELECT d.*, cat.nome as categoria_nome,
       COALESCE(p_stats.parcelas_pagas, 0) as parcelas_pagas,
@@ -24,23 +24,23 @@ router.get('/', async (req, res) => {
       ORDER BY data_vencimento LIMIT 1
     ) p_next ON true`
   const params = []
-  if (ativa !== undefined) {
-    sql += ' WHERE d.ativa = $1'
-    params.push(ativa === 'true')
-  }
+  const wheres = []
+  if (ativa !== undefined) { params.push(ativa === 'true'); wheres.push(`d.ativa = $${params.length}`) }
+  if (cartao_id !== undefined) { params.push(cartao_id); wheres.push(`d.cartao_id = $${params.length}`) }
+  if (wheres.length) sql += ' WHERE ' + wheres.join(' AND ')
   sql += ' ORDER BY d.created_at DESC'
   const { rows } = await pool.query(sql, params)
   res.json(rows)
 })
 
 router.post('/', async (req, res) => {
-  const { descricao, tipo, valor_total, num_parcelas, valor_parcela, data_inicio, data_termino, categoria_id, forma_pagamento } = req.body
+  const { descricao, tipo, valor_total, num_parcelas, valor_parcela, data_inicio, data_termino, categoria_id, forma_pagamento, cartao_id } = req.body
 
   // 1. Inserir dívida
   const { rows: [divida] } = await pool.query(
-    `INSERT INTO dividas (descricao, tipo, valor_total, num_parcelas, valor_parcela, data_inicio, data_termino, categoria_id, forma_pagamento)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-    [descricao, tipo, valor_total, num_parcelas, valor_parcela, data_inicio, data_termino, categoria_id, forma_pagamento || 'boleto']
+    `INSERT INTO dividas (descricao, tipo, valor_total, num_parcelas, valor_parcela, data_inicio, data_termino, categoria_id, forma_pagamento, cartao_id)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+    [descricao, tipo, valor_total, num_parcelas, valor_parcela, data_inicio, data_termino, categoria_id, forma_pagamento || 'boleto', cartao_id || null]
   )
 
   // 2. Gerar parcelas mensais a partir de data_inicio
@@ -67,11 +67,11 @@ router.get('/:id/parcelas', async (req, res) => {
 })
 
 router.put('/:id', async (req, res) => {
-  const { descricao, tipo, valor_total, num_parcelas, valor_parcela, data_inicio, data_termino, categoria_id, ativa, forma_pagamento } = req.body
+  const { descricao, tipo, valor_total, num_parcelas, valor_parcela, data_inicio, data_termino, categoria_id, ativa, forma_pagamento, cartao_id } = req.body
   const { rows } = await pool.query(
     `UPDATE dividas SET descricao=$1, tipo=$2, valor_total=$3, num_parcelas=$4, valor_parcela=$5,
-     data_inicio=$6, data_termino=$7, categoria_id=$8, ativa=$9, forma_pagamento=$10 WHERE id=$11 RETURNING *`,
-    [descricao, tipo, valor_total, num_parcelas, valor_parcela, data_inicio, data_termino, categoria_id, ativa, forma_pagamento || 'boleto', req.params.id]
+     data_inicio=$6, data_termino=$7, categoria_id=$8, ativa=$9, forma_pagamento=$10, cartao_id=$11 WHERE id=$12 RETURNING *`,
+    [descricao, tipo, valor_total, num_parcelas, valor_parcela, data_inicio, data_termino, categoria_id, ativa, forma_pagamento || 'boleto', cartao_id || null, req.params.id]
   )
   if (!rows.length) return res.status(404).json({ error: 'Não encontrado' })
   res.json(rows[0])

@@ -1,7 +1,9 @@
 import { fetchAuth } from './client'
 
-export async function getDividas(ativa = true) {
-  const r = await fetchAuth(`/api/dividas?ativa=${ativa}`)
+export async function getDividas(ativa = true, cartao_id = null) {
+  let url = `/api/dividas?ativa=${ativa}`
+  if (cartao_id) url += `&cartao_id=${cartao_id}`
+  const r = await fetchAuth(url)
   return r.json()
 }
 
