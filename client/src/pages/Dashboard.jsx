@@ -3,12 +3,20 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { getDashboard } from '../api/dashboard'
 import { pagarConta } from '../api/contas'
+import { getDividas, registrarParcela } from '../api/dividas'
 import MonthPicker from '../components/MonthPicker'
 import PageHeader from '../components/PageHeader'
 import StatusBadge from '../components/StatusBadge'
 const BRL = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const MESES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const mesLabel = s => MESES_PT[parseInt(s.split('-')[1]) - 1]
+
+const fmtDate = s => {
+  if (!s) return '—'
+  const d = new Date(s)
+  d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
+  return d.toLocaleDateString('pt-BR')
+}
 
 const fmtVencimento = c => {
   const d = new Date(c.mes_referencia)
@@ -94,10 +102,23 @@ export default function Dashboard() {
   const { mesSelecionado, config } = useApp()
   const navigate = useNavigate()
   const [dados, setDados] = useState(null)
+  const [dividas, setDividas] = useState([])
   const [pagando, setPagando] = useState(new Set())
+  const [pagandoParcela, setPagandoParcela] = useState(new Set())
 
   const carregar = () => getDashboard(mesSelecionado).then(setDados)
-  useEffect(() => { carregar() }, [mesSelecionado])
+  const carregarDividas = () => getDividas(true).then(list => setDividas(list.filter(d => !d.cartao_id)))
+  useEffect(() => { carregar(); carregarDividas() }, [mesSelecionado])
+
+  async function pagarParcelaDivida(d) {
+    setPagandoParcela(s => new Set([...s, d.id]))
+    try {
+      await registrarParcela(d.id)
+      await Promise.all([carregar(), carregarDividas()])
+    } finally {
+      setPagandoParcela(s => { const n = new Set(s); n.delete(d.id); return n })
+    }
+  }
 
   async function marcarContaPaga(conta) {
     setPagando(s => new Set([...s, conta.id]))
@@ -187,6 +208,71 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
+
+            {/* ── Financiamentos e Gastos Extras ── */}
+            {dividas.filter(d => d.ativa).length > 0 && (() => {
+              const hoje = new Date()
+              const mesHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`
+              const grupos = dividas.filter(d => d.ativa).reduce((acc, d) => {
+                const cat = d.categoria_nome || 'Sem categoria'
+                if (!acc[cat]) acc[cat] = []
+                acc[cat].push(d)
+                return acc
+              }, {})
+              return Object.entries(grupos).map(([cat, itens]) => (
+                <div key={cat} className="rounded-xl overflow-hidden"
+                  style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
+                  <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(239,68,68,0.7)' }}>{cat}</p>
+                    <p className="text-[10px] text-gray-600 tabular-nums">
+                      {BRL(itens.reduce((s, d) => s + Number(d.valor_parcela), 0))}/mês
+                    </p>
+                  </div>
+                  <div className="divide-y" style={{ borderColor: 'var(--divider)' }}>
+                    {itens.map(d => {
+                      const mesProxVenc = d.proxima_vencimento ? d.proxima_vencimento.slice(0, 7) : null
+                      const jaPagou = d.parcelas_pagas > 0 && (mesProxVenc === null || mesProxVenc > mesHoje)
+                      const temPendente = (d.parcelas_pagas || 0) < d.num_parcelas
+                      const progresso = d.num_parcelas > 0 ? ((d.parcelas_pagas || 0) / d.num_parcelas) * 100 : 0
+                      return (
+                        <div key={d.id} className="flex items-center justify-between px-4 py-3">
+                          <div className="flex-1 min-w-0 pr-3">
+                            <p className="text-sm text-white truncate">{d.descricao}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] text-gray-600">{d.parcelas_pagas || 0}/{d.num_parcelas} parcelas</span>
+                              {d.proxima_vencimento && (
+                                <span className="text-[10px] text-gray-600">· vence {fmtDate(d.proxima_vencimento)}</span>
+                              )}
+                            </div>
+                            <div className="mt-1 h-1 rounded-full w-24" style={{ background: 'var(--progress-track)' }}>
+                              <div className="h-1 rounded-full bg-red-600 transition-all" style={{ width: `${progresso}%` }} />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="text-sm tabular-nums font-semibold" style={{ color: jaPagou ? '#22c55e' : 'var(--text)' }}>
+                              {BRL(d.valor_parcela)}
+                            </span>
+                            {jaPagou ? (
+                              <span className="text-[10px] font-semibold text-green-500">Pago</span>
+                            ) : temPendente ? (
+                              <button
+                                onClick={() => pagarParcelaDivida(d)}
+                                disabled={pagandoParcela.has(d.id)}
+                                className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
+                                style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
+                                {pagandoParcela.has(d.id) ? '...' : 'Pagar'}
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-gray-600">Quitado</span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))
+            })()}
 
           </>
         )}
