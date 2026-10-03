@@ -561,7 +561,8 @@ function ParcelaMesItem({ divida: d, onPagar }) {
               confirmando ? (
                 <div className="flex items-center gap-2">
                   <button onClick={pagar} disabled={pagando}
-                    className="text-[10px] transition-colors" style={{ color: '#14b8a6' }}>
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
+                    style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
                     {pagando ? '...' : 'Confirmar'}
                   </button>
                   <button onClick={() => setConfirmando(false)}
@@ -569,7 +570,8 @@ function ParcelaMesItem({ divida: d, onPagar }) {
                 </div>
               ) : (
                 <button onClick={() => setConfirmando(true)}
-                  className="text-[10px] transition-colors" style={{ color: '#14b8a6' }}>
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
+                  style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
                   Pagar
                 </button>
               )
