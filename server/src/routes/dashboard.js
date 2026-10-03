@@ -7,7 +7,7 @@ router.get('/', async (req, res) => {
   const mesDate = `${mes}-01`
 
   const [
-    entradas, contasPagas, contasPendentes,
+    entradas, contasPagas, parcelasPagas, contasPendentes,
     contasProximas, contasAtrasadas,
     historicoEntradas, historicoSaidas,
   ] = await Promise.all([
@@ -22,6 +22,15 @@ router.get('/', async (req, res) => {
       `SELECT COALESCE(SUM(valor), 0) as total FROM contas
        WHERE DATE_TRUNC('month', mes_referencia) = DATE_TRUNC('month', $1::date)
        AND status = 'paga' AND recorrente = false`,
+      [mesDate]
+    ),
+    // Parcelas de dívidas pagas no mês
+    pool.query(
+      `SELECT COALESCE(SUM(pd.valor), 0) as total
+       FROM parcelas_divida pd
+       WHERE pd.status = 'paga'
+         AND pd.data_pagamento IS NOT NULL
+         AND DATE_TRUNC('month', pd.data_pagamento) = DATE_TRUNC('month', $1::date)`,
       [mesDate]
     ),
     // Contas pendentes/atrasadas no mês (exclui templates)
@@ -82,18 +91,24 @@ router.get('/', async (req, res) => {
        GROUP BY m.mes ORDER BY m.mes`,
       [mesDate]
     ),
-    // Histórico mensal de saídas — contas pagas (ano inteiro do mês selecionado)
+    // Histórico mensal de saídas — contas pagas + parcelas de dívidas pagas
     pool.query(
       `SELECT TO_CHAR(m.mes, 'YYYY-MM') as mes,
-              COALESCE(SUM(c.valor::numeric), 0) as total
+              COALESCE((
+                SELECT SUM(c.valor) FROM contas c
+                WHERE DATE_TRUNC('month', c.mes_referencia) = m.mes AND c.status = 'paga'
+              ), 0) +
+              COALESCE((
+                SELECT SUM(pd.valor) FROM parcelas_divida pd
+                WHERE pd.status = 'paga' AND pd.data_pagamento IS NOT NULL
+                  AND DATE_TRUNC('month', pd.data_pagamento) = m.mes
+              ), 0) as total
        FROM generate_series(
          DATE_TRUNC('year', $1::date),
          DATE_TRUNC('year', $1::date) + INTERVAL '11 months',
          '1 month'::interval
        ) as m(mes)
-       LEFT JOIN contas c
-         ON DATE_TRUNC('month', c.mes_referencia) = m.mes AND c.status = 'paga'
-       GROUP BY m.mes ORDER BY m.mes`,
+       ORDER BY m.mes`,
       [mesDate]
     ),
   ])
@@ -111,7 +126,7 @@ router.get('/', async (req, res) => {
 
   res.json({
     total_entradas:        parseFloat(entradas.rows[0].total),
-    total_contas_pagas:    parseFloat(contasPagas.rows[0].total),
+    total_contas_pagas:    parseFloat(contasPagas.rows[0].total) + parseFloat(parcelasPagas.rows[0].total),
     total_contas_pendentes: parseFloat(contasPendentes.rows[0].total),
     contas_proximas:       contasProximas.rows,
     contas_atrasadas:      contasAtrasadas.rows,
