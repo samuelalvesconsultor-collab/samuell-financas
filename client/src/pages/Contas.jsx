@@ -1027,7 +1027,7 @@ export default function Contas() {
               </button>
             </div>
           ) : (
-            <div className="px-4 md:px-8 pb-24 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="px-4 md:px-8 pb-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {gruposSemCartao
                 .filter(g => !gruposOcultos.has(g.nome ?? '__sem__'))
                 .map((grupo, idx) => (
