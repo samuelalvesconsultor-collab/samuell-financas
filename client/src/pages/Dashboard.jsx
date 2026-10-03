@@ -167,87 +167,63 @@ export default function Dashboard() {
               </div>
             )}
 
-            {dados.contas_proximas.filter(c => !c.cartao_vinculado).length > 0 && (
-              <div className="rounded-xl overflow-hidden"
-                style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
-                <div className="px-4 pt-3 pb-1">
-                  <h2 className="text-[10px] font-bold tracking-widest uppercase" style={{ color: 'rgba(234,179,8,0.8)' }}>Contas em Aberto</h2>
-                </div>
-                <div className="divide-y" style={{ borderColor: 'var(--divider)' }}>
-                  {dados.contas_proximas.filter(c => !c.cartao_vinculado).map(c => (
-                    <div key={c.id} className="flex items-center justify-between px-4 py-3">
-                      <div className="flex-1 min-w-0 pr-3">
-                        <p className="text-sm text-white truncate">{c.descricao}</p>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-sm tabular-nums font-semibold" style={{ color: 'rgba(255,23,68,0.8)' }}>-{BRL(c.valor)}</span>
-                        <button
-                          onClick={() => marcarContaPaga(c)}
-                          disabled={pagando.has(c.id)}
-                          className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
-                          style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
-                          {pagando.has(c.id) ? '...' : 'Pagar'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── Financiamentos e Gastos Extras ── */}
-            {dividas.filter(d => d.ativa).length > 0 && (() => {
+            {/* ── Lista unificada de pagamentos pendentes ── */}
+            {(() => {
               const hoje = new Date()
               const mesHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`
-              const grupos = dividas.filter(d => d.ativa).reduce((acc, d) => {
-                const cat = d.categoria_nome || 'Sem categoria'
-                if (!acc[cat]) acc[cat] = []
-                acc[cat].push(d)
-                return acc
-              }, {})
-              return Object.entries(grupos).map(([cat, itens]) => (
-                <div key={cat} className="rounded-xl overflow-hidden"
+              const itensDividas = dividas.filter(d => d.ativa).map(d => {
+                const mesProxVenc = d.proxima_vencimento ? d.proxima_vencimento.slice(0, 7) : null
+                const jaPagou = (d.parcelas_pagas || 0) > 0 && (mesProxVenc === null || mesProxVenc > mesHoje)
+                const temPendente = (d.parcelas_pagas || 0) < d.num_parcelas
+                return { tipo: 'divida', d, jaPagou, temPendente }
+              })
+              const itensContas = dados.contas_proximas.filter(c => !c.cartao_vinculado).map(c => ({ tipo: 'conta', c }))
+              const todos = [...itensContas, ...itensDividas]
+              if (!todos.length) return null
+              return (
+                <div className="rounded-xl overflow-hidden"
                   style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
-                  <div className="px-4 pt-3 pb-1 flex items-center justify-between">
-                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(239,68,68,0.7)' }}>{cat}</p>
-                    <p className="text-[10px] text-gray-600 tabular-nums">
-                      {BRL(itens.reduce((s, d) => s + Number(d.valor_parcela), 0))}/mês
-                    </p>
+                  <div className="px-4 pt-3 pb-1">
+                    <h2 className="text-[10px] font-bold tracking-widest uppercase" style={{ color: 'rgba(234,179,8,0.8)' }}>Pagamentos Pendentes</h2>
                   </div>
                   <div className="divide-y" style={{ borderColor: 'var(--divider)' }}>
-                    {itens.map(d => {
-                      const mesProxVenc = d.proxima_vencimento ? d.proxima_vencimento.slice(0, 7) : null
-                      const jaPagou = d.parcelas_pagas > 0 && (mesProxVenc === null || mesProxVenc > mesHoje)
-                      const temPendente = (d.parcelas_pagas || 0) < d.num_parcelas
-                      return (
-                        <div key={d.id} className="flex items-center justify-between px-4 py-3">
-                          <div className="flex-1 min-w-0 pr-3">
-                            <p className="text-sm text-white truncate">{d.descricao}</p>
-                          </div>
-                          <div className="flex items-center gap-3 shrink-0">
-                            <span className="text-sm tabular-nums font-semibold" style={{ color: jaPagou ? '#22c55e' : 'rgba(255,23,68,0.8)' }}>
-                              -{BRL(d.valor_parcela)}
-                            </span>
-                            {jaPagou ? (
-                              <span className="text-[10px] font-semibold text-green-500">Pago</span>
-                            ) : temPendente ? (
-                              <button
-                                onClick={() => pagarParcelaDivida(d)}
-                                disabled={pagandoParcela.has(d.id)}
-                                className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
-                                style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
-                                {pagandoParcela.has(d.id) ? '...' : 'Pagar'}
-                              </button>
-                            ) : (
-                              <span className="text-[10px] text-gray-600">Quitado</span>
-                            )}
-                          </div>
+                    {itensContas.map(({ c }) => (
+                      <div key={`c-${c.id}`} className="flex items-center justify-between px-4 py-3">
+                        <p className="text-sm text-white truncate flex-1 pr-3">{c.descricao}</p>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-sm tabular-nums font-semibold" style={{ color: 'rgba(255,23,68,0.8)' }}>-{BRL(c.valor)}</span>
+                          <button onClick={() => marcarContaPaga(c)} disabled={pagando.has(c.id)}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
+                            style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
+                            {pagando.has(c.id) ? '...' : 'Pagar'}
+                          </button>
                         </div>
-                      )
-                    })}
+                      </div>
+                    ))}
+                    {itensDividas.map(({ d, jaPagou, temPendente }) => (
+                      <div key={`d-${d.id}`} className="flex items-center justify-between px-4 py-3">
+                        <p className="text-sm text-white truncate flex-1 pr-3">{d.descricao}</p>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-sm tabular-nums font-semibold" style={{ color: jaPagou ? '#22c55e' : 'rgba(255,23,68,0.8)' }}>
+                            -{BRL(d.valor_parcela)}
+                          </span>
+                          {jaPagou ? (
+                            <span className="text-[10px] font-semibold text-green-500">Pago</span>
+                          ) : temPendente ? (
+                            <button onClick={() => pagarParcelaDivida(d)} disabled={pagandoParcela.has(d.id)}
+                              className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
+                              style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
+                              {pagandoParcela.has(d.id) ? '...' : 'Pagar'}
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-gray-600">Quitado</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))
+              )
             })()}
 
             {/* ── Total Pendente ── */}
