@@ -11,13 +11,6 @@ const BRL = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency
 const MESES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const mesLabel = s => MESES_PT[parseInt(s.split('-')[1]) - 1]
 
-const fmtDate = s => {
-  if (!s) return '—'
-  const d = new Date(s)
-  d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
-  return d.toLocaleDateString('pt-BR')
-}
-
 const fmtVencimento = c => {
   const d = new Date(c.mes_referencia)
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), c.dia_vencimento))
@@ -235,24 +228,14 @@ export default function Dashboard() {
                       const mesProxVenc = d.proxima_vencimento ? d.proxima_vencimento.slice(0, 7) : null
                       const jaPagou = d.parcelas_pagas > 0 && (mesProxVenc === null || mesProxVenc > mesHoje)
                       const temPendente = (d.parcelas_pagas || 0) < d.num_parcelas
-                      const progresso = d.num_parcelas > 0 ? ((d.parcelas_pagas || 0) / d.num_parcelas) * 100 : 0
                       return (
                         <div key={d.id} className="flex items-center justify-between px-4 py-3">
                           <div className="flex-1 min-w-0 pr-3">
                             <p className="text-sm text-white truncate">{d.descricao}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[10px] text-gray-600">{d.parcelas_pagas || 0}/{d.num_parcelas} parcelas</span>
-                              {d.proxima_vencimento && (
-                                <span className="text-[10px] text-gray-600">· vence {fmtDate(d.proxima_vencimento)}</span>
-                              )}
-                            </div>
-                            <div className="mt-1 h-1 rounded-full w-24" style={{ background: 'var(--progress-track)' }}>
-                              <div className="h-1 rounded-full bg-red-600 transition-all" style={{ width: `${progresso}%` }} />
-                            </div>
                           </div>
                           <div className="flex items-center gap-3 shrink-0">
-                            <span className="text-sm tabular-nums font-semibold" style={{ color: jaPagou ? '#22c55e' : 'var(--text)' }}>
-                              {BRL(d.valor_parcela)}
+                            <span className="text-sm tabular-nums font-semibold" style={{ color: jaPagou ? '#22c55e' : 'rgba(255,23,68,0.8)' }}>
+                              -{BRL(d.valor_parcela)}
                             </span>
                             {jaPagou ? (
                               <span className="text-[10px] font-semibold text-green-500">Pago</span>
