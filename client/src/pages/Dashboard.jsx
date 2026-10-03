@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { getDashboard } from '../api/dashboard'
-import { pagarConta, atualizarConta } from '../api/contas'
+import { pagarConta } from '../api/contas'
 import MonthPicker from '../components/MonthPicker'
 import PageHeader from '../components/PageHeader'
-import Modal from '../components/Modal'
-import FormConta from '../components/FormConta'
 import StatusBadge from '../components/StatusBadge'
 const BRL = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const MESES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -96,7 +94,6 @@ export default function Dashboard() {
   const { mesSelecionado, config } = useApp()
   const navigate = useNavigate()
   const [dados, setDados] = useState(null)
-  const [editConta, setEditConta] = useState(null)
   const [pagando, setPagando] = useState(new Set())
 
   const carregar = () => getDashboard(mesSelecionado).then(setDados)
@@ -107,12 +104,6 @@ export default function Dashboard() {
     await pagarConta(conta.id, new Date().toISOString().split('T')[0])
     await carregar()
     setPagando(s => { const n = new Set(s); n.delete(conta.id); return n })
-  }
-
-  async function salvarEdicaoConta(form) {
-    await atualizarConta(editConta.id, form)
-    setEditConta(null)
-    carregar()
   }
 
   const semDados = dados &&
@@ -168,39 +159,29 @@ export default function Dashboard() {
               </div>
             )}
 
-            {dados.contas_proximas.length > 0 && (
-              <div className="card-contas-abertas rounded-xl p-4"
-                style={{ background: 'rgba(234,179,8,0.05)', border: '1px solid rgba(234,179,8,0.18)' }}>
-                <h2 className="text-[10px] font-bold tracking-widest text-yellow-400 uppercase mb-3">Contas em Aberto</h2>
-                <div className="space-y-0.5">
-                  {dados.contas_proximas.map(c => (
-                    <div key={c.id} className="flex items-center gap-3 py-2.5"
-                      style={{ borderBottom: '1px solid rgba(234,179,8,0.06)' }}>
-                      <button
-                        onClick={() => marcarContaPaga(c)}
-                        disabled={pagando.has(c.id)}
-                        className="w-5 h-5 rounded flex items-center justify-center shrink-0 transition-colors"
-                        style={{ border: '1.5px solid rgba(234,179,8,0.4)', background: pagando.has(c.id) ? 'rgba(0,230,118,0.15)' : 'transparent' }}
-                        title="Marcar como pago">
-                        {pagando.has(c.id) && (
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00e676" strokeWidth="3">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-yellow-100 truncate">{c.descricao}</p>
-                        <p className="text-[10px] text-yellow-700 mt-0.5">Vence {fmtVencimento(c)}</p>
+            {dados.contas_proximas.filter(c => !c.cartao_vinculado).length > 0 && (
+              <div className="rounded-xl overflow-hidden"
+                style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
+                <div className="px-4 pt-3 pb-1">
+                  <h2 className="text-[10px] font-bold tracking-widest uppercase" style={{ color: 'rgba(234,179,8,0.8)' }}>Contas em Aberto</h2>
+                </div>
+                <div className="divide-y" style={{ borderColor: 'var(--divider)' }}>
+                  {dados.contas_proximas.filter(c => !c.cartao_vinculado).map(c => (
+                    <div key={c.id} className="flex items-center justify-between px-4 py-3">
+                      <div className="flex-1 min-w-0 pr-3">
+                        <p className="text-sm text-white truncate">{c.descricao}</p>
+                        <p className="text-[10px] text-gray-600 mt-0.5">Vence {fmtVencimento(c)}</p>
                       </div>
-                      <span className="text-sm text-yellow-300 tabular-nums shrink-0">{BRL(c.valor)}</span>
-                      <button onClick={() => setEditConta(c)}
-                        className="text-gray-600 hover:text-gray-300 shrink-0 transition-colors"
-                        title="Editar conta">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                      </button>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-sm tabular-nums font-semibold" style={{ color: 'rgba(255,23,68,0.8)' }}>-{BRL(c.valor)}</span>
+                        <button
+                          onClick={() => marcarContaPaga(c)}
+                          disabled={pagando.has(c.id)}
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
+                          style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
+                          {pagando.has(c.id) ? '...' : 'Pagar'}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -210,12 +191,6 @@ export default function Dashboard() {
           </>
         )}
       </div>
-
-      {editConta && (
-        <Modal titulo="EDITAR CONTA" onClose={() => setEditConta(null)}>
-          <FormConta inicial={editConta} onSalvar={salvarEdicaoConta} onCancelar={() => setEditConta(null)} />
-        </Modal>
-      )}
 
     </div>
   )
