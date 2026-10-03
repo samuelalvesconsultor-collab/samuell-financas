@@ -86,8 +86,8 @@ function Parcelas({ divida, onPagar }) {
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-semibold text-green-400">Paga</span>
                       <button onClick={() => setEstornando(p.id)}
-                        className="text-[9px] text-gray-600 hover:text-red-400 transition-colors underline underline-offset-2">
-                        Estornar
+                        className="text-[11px] text-gray-600 hover:text-red-400 transition-colors leading-none">
+                        ×
                       </button>
                     </div>
                   )
