@@ -275,13 +275,17 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, onOcultar, idx, dr
               </p>
               <div className="flex items-center gap-2 justify-end mt-1">
                 {c.status !== 'paga' && (
-                  <button onClick={() => onPagar(c)} className="text-[10px] transition-colors" style={{ color: '#14b8a6' }}
+                  <button onClick={() => onPagar(c)}
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
+                    style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}
                     onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Pagar</button>
                 )}
-                <button onClick={() => onEditar(c)} className="text-[10px] transition-colors" style={{ color: 'var(--text-faint)' }}
-                  onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Editar</button>
-                <button onClick={() => onExcluir(c)} className="text-[10px] hover:text-red-400 transition-colors" style={{ color: 'var(--text-faint)' }}
-                  onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Excluir</button>
+                <button onClick={() => onEditar(c)}
+                  className="text-[13px] transition-colors hover:text-white" style={{ color: 'var(--text-faint)' }}
+                  onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} title="Editar">✏️</button>
+                <button onClick={() => onExcluir(c)}
+                  className="text-[13px] hover:text-red-400 transition-colors" style={{ color: 'var(--text-faint)' }}
+                  onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} title="Excluir">×</button>
               </div>
             </div>
           </div>
