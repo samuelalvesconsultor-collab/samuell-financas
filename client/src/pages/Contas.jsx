@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { getContas, criarConta, atualizarConta, deletarConta, pagarConta } from '../api/contas'
-import { getDividas, criarDivida, atualizarDivida, deletarDivida } from '../api/dividas'
+import { getDividas, criarDivida, atualizarDivida, deletarDivida, registrarParcela } from '../api/dividas'
 import { getConfiguracoes, patchConfiguracao } from '../api/configuracoes'
 import { getDashboard } from '../api/dashboard'
 import { getCartoes, criarCartao, atualizarCartao, deletarCartao, getGastosCartao } from '../api/cartoes'
@@ -494,6 +494,92 @@ function CartaoCard({ cartao, contas, mes, onEditar, onExcluir, onEditarDivida, 
   )
 }
 
+/* ── ParcelaMesItem — dívida como item pagável na aba Contas ── */
+
+function ParcelaMesItem({ divida: d, onPagar }) {
+  const [confirmando, setConfirmando] = useState(false)
+  const [pagando, setPagando] = useState(false)
+
+  const hoje = new Date()
+  const mesHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`
+  const mesProxVenc = d.proxima_vencimento ? d.proxima_vencimento.slice(0, 7) : null
+  const jaPagouEsseMes = d.parcelas_pagas > 0 && (mesProxVenc === null || mesProxVenc > mesHoje)
+  const temPendente = (d.parcelas_pagas || 0) < d.num_parcelas
+  const progresso = d.num_parcelas > 0 ? ((d.parcelas_pagas || 0) / d.num_parcelas) * 100 : 0
+
+  const fmtDate = s => {
+    if (!s) return '—'
+    const dt = new Date(s)
+    dt.setMinutes(dt.getMinutes() + dt.getTimezoneOffset())
+    return dt.toLocaleDateString('pt-BR')
+  }
+
+  async function pagar(e) {
+    e.stopPropagation()
+    setPagando(true)
+    try {
+      await registrarParcela(d.id)
+      setConfirmando(false)
+      onPagar()
+    } finally {
+      setPagando(false)
+    }
+  }
+
+  return (
+    <div className="px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-semibold leading-snug truncate block" style={{ color: 'var(--text)' }}>
+            {d.descricao}
+          </span>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-[10px] text-gray-600">
+              {d.parcelas_pagas || 0}/{d.num_parcelas} parcelas
+            </span>
+            {d.proxima_vencimento && (
+              <span className="text-[10px] text-gray-600">· vence {fmtDate(d.proxima_vencimento)}</span>
+            )}
+          </div>
+          <div className="mt-1.5 h-1 rounded-full w-32" style={{ background: 'var(--progress-track)' }}>
+            <div className="h-1 rounded-full bg-red-600 transition-all" style={{ width: `${progresso}%` }} />
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="font-bold tabular-nums text-sm"
+            style={jaPagouEsseMes ? { color: '#22c55e' } : { color: 'var(--text)' }}>
+            {BRL(d.valor_parcela)}
+          </p>
+          <div className="mt-1.5">
+            {jaPagouEsseMes ? (
+              <span className="text-[10px] text-green-500 font-semibold">Pago</span>
+            ) : temPendente ? (
+              confirmando ? (
+                <div className="flex items-center gap-2">
+                  <button onClick={pagar} disabled={pagando}
+                    className="text-[11px] text-teal-400 hover:text-teal-300 font-semibold transition-colors">
+                    {pagando ? '...' : 'Confirmar'}
+                  </button>
+                  <button onClick={() => setConfirmando(false)}
+                    className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors">Não</button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmando(true)}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors"
+                  style={{ background: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.25)', color: '#14b8a6' }}>
+                  Pagar
+                </button>
+              )
+            ) : (
+              <span className="text-[10px] text-gray-600">Quitado</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ── FAB speed dial ──────────────────────────────────── */
 
 function FABSpeedDial({ onNovaConta, onNovaDivida, onNovoCartao, activeTab }) {
@@ -760,7 +846,7 @@ export default function Contas() {
   }
 
   useEffect(() => {
-    if (activeTab === 'dividas') carregarDividas()
+    if (activeTab === 'dividas' || activeTab === 'contas') carregarDividas()
   }, [filtroDividas, activeTab])
 
   function salvarOrdemDividas(novaLista) {
@@ -961,6 +1047,35 @@ export default function Contas() {
                   />
                 ))
               }
+            </div>
+          )}
+
+          {/* ── Parcelas do mês ── */}
+          {dividasSemCartao.filter(d => d.ativa).length > 0 && (
+            <div className="px-4 md:px-8 pb-6 space-y-3">
+              {Object.entries(
+                dividasSemCartao.filter(d => d.ativa).reduce((acc, d) => {
+                  const cat = d.categoria_nome || 'Sem categoria'
+                  if (!acc[cat]) acc[cat] = []
+                  acc[cat].push(d)
+                  return acc
+                }, {})
+              ).map(([cat, itens]) => (
+                <div key={cat} className="rounded-xl overflow-hidden"
+                  style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
+                  <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: VERM }}>{cat}</p>
+                    <p className="text-[10px] text-gray-500 tabular-nums">
+                      {BRL(itens.reduce((s, d) => s + Number(d.valor_parcela), 0))}/mês
+                    </p>
+                  </div>
+                  <div className="divide-y" style={{ borderColor: 'var(--divider)' }}>
+                    {itens.map(d => (
+                      <ParcelaMesItem key={d.id} divida={d} onPagar={() => carregarDividas()} />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </>
