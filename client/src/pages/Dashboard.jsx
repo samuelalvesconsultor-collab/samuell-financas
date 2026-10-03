@@ -8,14 +8,6 @@ import MonthPicker from '../components/MonthPicker'
 import PageHeader from '../components/PageHeader'
 import StatusBadge from '../components/StatusBadge'
 const BRL = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-const MESES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-const mesLabel = s => MESES_PT[parseInt(s.split('-')[1]) - 1]
-
-const fmtVencimento = c => {
-  const d = new Date(c.mes_referencia)
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), c.dia_vencimento))
-    .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-}
 
 function CardEntrada({ titulo, valor }) {
   return (
@@ -186,7 +178,6 @@ export default function Dashboard() {
                     <div key={c.id} className="flex items-center justify-between px-4 py-3">
                       <div className="flex-1 min-w-0 pr-3">
                         <p className="text-sm text-white truncate">{c.descricao}</p>
-                        <p className="text-[10px] text-gray-600 mt-0.5">Vence {fmtVencimento(c)}</p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <span className="text-sm tabular-nums font-semibold" style={{ color: 'rgba(255,23,68,0.8)' }}>-{BRL(c.valor)}</span>
@@ -257,6 +248,36 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))
+            })()}
+
+            {/* ── Total Pendente ── */}
+            {(() => {
+              const hoje = new Date()
+              const mesHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`
+              const totalContas = dados.contas_proximas
+                .filter(c => !c.cartao_vinculado)
+                .reduce((s, c) => s + Number(c.valor), 0)
+              const totalDividas = dividas
+                .filter(d => d.ativa)
+                .filter(d => {
+                  const mesProxVenc = d.proxima_vencimento ? d.proxima_vencimento.slice(0, 7) : null
+                  return !((d.parcelas_pagas || 0) > 0 && (mesProxVenc === null || mesProxVenc > mesHoje))
+                })
+                .filter(d => (d.parcelas_pagas || 0) < d.num_parcelas)
+                .reduce((s, d) => s + Number(d.valor_parcela), 0)
+              const total = totalContas + totalDividas
+              if (total <= 0) return null
+              return (
+                <div className="rounded-xl px-4 py-3 flex items-center justify-between"
+                  style={{ background: 'var(--card)', border: '1px solid rgba(255,23,68,0.2)' }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,23,68,0.6)' }}>
+                    Total Pendente
+                  </p>
+                  <p className="text-base font-bold tabular-nums" style={{ color: '#ff1744' }}>
+                    -{BRL(total)}
+                  </p>
+                </div>
+              )
             })()}
 
           </>
