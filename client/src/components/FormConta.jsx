@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
+import { getCartoes } from '../api/cartoes'
 
 function getTipoPagamento(inicial) {
   if (!inicial) return 'avista'
@@ -28,6 +29,12 @@ export default function FormConta({ inicial, onSalvar, onCancelar }) {
     mes_referencia:  toDateStr(inicial?.mes_referencia) || mesRef,
   })
 
+  const [cartoes, setCartoes] = useState([])
+
+  useEffect(() => {
+    getCartoes().then(setCartoes).catch(() => {})
+  }, [])
+
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const cats = categorias.filter(c => !c.arquivada && (c.tipo === 'saida' || c.tipo === 'ambos'))
@@ -35,6 +42,12 @@ export default function FormConta({ inicial, onSalvar, onCancelar }) {
   const isParc = form.tipo_pagamento === 'parcelado'
   const isCredito = form.forma_pagamento === 'credito'
   const ehInstancia = !!(inicial?.conta_pai_id)
+
+  // Detecta se categoria selecionada é relacionada a cartão
+  const catSelecionada = cats.find(c => String(c.id) === String(form.categoria_id))
+  const catEhCartao = catSelecionada?.nome?.toLowerCase().includes('cartão') ||
+                      catSelecionada?.nome?.toLowerCase().includes('cartao') ||
+                      catSelecionada?.nome?.toLowerCase().includes('assinatura')
 
   const TIPO_OPTS = [
     { val: 'avista',    label: 'À vista',   desc: 'Pagamento único' },
@@ -53,18 +66,20 @@ export default function FormConta({ inicial, onSalvar, onCancelar }) {
       tipo_pagamento:  form.tipo_pagamento,
     }
 
+    const deveVincularCartao = (isCredito && (isParc || isRec)) || catEhCartao
+
     if (isRec) {
       payload.recorrente       = true
       payload.status           = 'pendente'
       payload.forma_pagamento  = form.forma_pagamento
-      payload.cartao_vinculado = isCredito ? form.cartao_vinculado : null
+      payload.cartao_vinculado = deveVincularCartao ? (form.cartao_vinculado || null) : null
     } else {
       payload.recorrente       = false
       payload.status           = 'pendente'
       payload.forma_pagamento  = form.forma_pagamento
+      payload.cartao_vinculado = deveVincularCartao ? (form.cartao_vinculado || null) : null
       if (isParc && form.num_parcelas) {
         payload.num_parcelas   = parseInt(form.num_parcelas)
-        payload.cartao_vinculado = isCredito ? form.cartao_vinculado : null
       }
     }
 
@@ -194,8 +209,8 @@ export default function FormConta({ inicial, onSalvar, onCancelar }) {
         </div>
       )}
 
-      {/* Cartão: só quando Parcelado + Crédito, OU Recorrente + Crédito */}
-      {isCredito && (isParc || isRec) && (
+      {/* Cartão: quando Crédito + (Parcelado ou Recorrente), OU quando categoria é de cartão/assinatura */}
+      {(isCredito && (isParc || isRec) || catEhCartao) && cartoes.length > 0 && (
         <div>
           <label className="text-[10px] font-semibold uppercase tracking-widest mb-1 block" style={{ color: 'var(--text-faint)' }}>
             Qual cartão?
@@ -205,8 +220,10 @@ export default function FormConta({ inicial, onSalvar, onCancelar }) {
             onChange={e => set('cartao_vinculado', e.target.value)}
             className="select-dark"
           >
-            <option value="Santander">Santander</option>
-            <option value="Mercado Pago">Mercado Pago</option>
+            <option value="">Selecione um cartão</option>
+            {cartoes.map(c => (
+              <option key={c.id} value={c.nome}>{c.nome}</option>
+            ))}
           </select>
         </div>
       )}
