@@ -226,35 +226,6 @@ export default function Dashboard() {
               )
             })()}
 
-            {/* ── Total Pendente ── */}
-            {(() => {
-              const hoje = new Date()
-              const mesHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`
-              const totalContas = dados.contas_proximas
-                .filter(c => !c.cartao_vinculado)
-                .reduce((s, c) => s + Number(c.valor), 0)
-              const totalDividas = dividas
-                .filter(d => d.ativa)
-                .filter(d => {
-                  const mesProxVenc = d.proxima_vencimento ? d.proxima_vencimento.slice(0, 7) : null
-                  return !((d.parcelas_pagas || 0) > 0 && (mesProxVenc === null || mesProxVenc > mesHoje))
-                })
-                .filter(d => (d.parcelas_pagas || 0) < d.num_parcelas)
-                .reduce((s, d) => s + Number(d.valor_parcela), 0)
-              const total = totalContas + totalDividas
-              if (total <= 0) return null
-              return (
-                <div className="rounded-xl px-4 py-3 flex items-center justify-between"
-                  style={{ background: 'var(--card)', border: '1px solid rgba(255,23,68,0.2)' }}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,23,68,0.6)' }}>
-                    Total Pendente
-                  </p>
-                  <p className="text-base font-bold tabular-nums" style={{ color: '#ff1744' }}>
-                    -{BRL(total)}
-                  </p>
-                </div>
-              )
-            })()}
 
           </>
         )}
