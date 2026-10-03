@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getParcelas, pagarParcela, registrarParcela } from '../api/dividas'
-import StatusBadge from './StatusBadge'
+import { getParcelas, pagarParcela, registrarParcela, estornarParcela } from '../api/dividas'
 import CategoryBadge from './CategoryBadge'
 
 export const BRL = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -25,13 +24,23 @@ const TIPO_DIVIDA_LABEL = { cartao: 'Cartão', financiamento: 'Financiamento', e
 function Parcelas({ divida, onPagar }) {
   const [parcelas, setParcelas] = useState(null)
   const [confirmando, setConfirmando] = useState(null)
+  const [estornando, setEstornando] = useState(null)
 
-  useEffect(() => { getParcelas(divida.id).then(setParcelas) }, [divida.id])
+  const recarregar = () => getParcelas(divida.id).then(setParcelas)
+
+  useEffect(() => { recarregar() }, [divida.id])
 
   async function pagar(p) {
     await pagarParcela(p.id, new Date().toISOString().split('T')[0])
     setConfirmando(null)
-    getParcelas(divida.id).then(setParcelas)
+    recarregar()
+    onPagar()
+  }
+
+  async function estornar(p) {
+    await estornarParcela(p.id)
+    setEstornando(null)
+    recarregar()
     onPagar()
   }
 
@@ -46,30 +55,55 @@ function Parcelas({ divida, onPagar }) {
         </p>
       </div>
       <div className="space-y-1.5">
-        {parcelas.map(p => (
-          <div key={p.id} className="flex items-center justify-between py-2 px-3 rounded-lg"
-            style={{ background: 'var(--card-highlight)', border: '1px solid var(--divider)' }}>
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] text-gray-600 tabular-nums w-4">#{p.numero_parcela}</span>
-              <span className="text-xs text-gray-400">{fmtDateDivida(p.data_vencimento)}</span>
-              <span className="text-xs text-white tabular-nums font-medium">{BRL(p.valor)}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              {p.status === 'paga'
-                ? <StatusBadge status="paga" />
-                : confirmando === p.id
-                  ? (
+        {parcelas.map(p => {
+          const paga = p.status === 'paga'
+          return (
+            <div key={p.id} className="flex items-center justify-between py-2 px-3 rounded-lg"
+              style={{
+                background: paga ? 'rgba(34,197,94,0.06)' : 'var(--card-highlight)',
+                border: `1px solid ${paga ? 'rgba(34,197,94,0.2)' : 'var(--divider)'}`,
+              }}>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] tabular-nums w-4" style={{ color: paga ? '#4ade80' : 'var(--text-faint)' }}>
+                  #{p.numero_parcela}
+                </span>
+                <span className="text-xs" style={{ color: paga ? '#86efac' : 'var(--text-muted)' }}>
+                  {fmtDateDivida(p.data_vencimento)}
+                </span>
+                <span className="text-xs tabular-nums font-medium" style={{ color: paga ? '#4ade80' : 'var(--text)' }}>
+                  {BRL(p.valor)}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                {paga ? (
+                  estornando === p.id ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">Confirmar?</span>
-                      <button onClick={() => pagar(p)} className="text-xs text-teal-400 hover:text-teal-300 font-medium">Sim</button>
-                      <button onClick={() => setConfirmando(null)} className="text-xs text-gray-600 hover:text-gray-400">Não</button>
+                      <span className="text-[10px] text-gray-400">Desfazer?</span>
+                      <button onClick={() => estornar(p)} className="text-[10px] text-red-400 hover:text-red-300 font-medium">Sim</button>
+                      <button onClick={() => setEstornando(null)} className="text-[10px] text-gray-600 hover:text-gray-400">Não</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-semibold text-green-400">Paga</span>
+                      <button onClick={() => setEstornando(p.id)}
+                        className="text-[9px] text-gray-600 hover:text-red-400 transition-colors underline underline-offset-2">
+                        Estornar
+                      </button>
                     </div>
                   )
-                  : <button onClick={() => setConfirmando(p.id)} className="text-xs text-teal-500 hover:text-teal-400 transition-colors">Pagar</button>
-              }
+                ) : confirmando === p.id ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">Confirmar?</span>
+                    <button onClick={() => pagar(p)} className="text-xs text-teal-400 hover:text-teal-300 font-medium">Sim</button>
+                    <button onClick={() => setConfirmando(null)} className="text-xs text-gray-600 hover:text-gray-400">Não</button>
+                  </div>
+                ) : (
+                  <button onClick={() => setConfirmando(p.id)} className="text-xs text-teal-500 hover:text-teal-400 transition-colors">Pagar</button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

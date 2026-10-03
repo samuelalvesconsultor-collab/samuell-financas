@@ -41,4 +41,33 @@ router.patch('/:id/pagar', async (req, res) => {
   res.json({ ok: true, parcela_id: parcela.id })
 })
 
+// PATCH /api/parcelas/:id/estornar — desfaz pagamento de uma parcela
+router.patch('/:id/estornar', async (req, res) => {
+  const { rows: [parcela] } = await pool.query(
+    `SELECT p.*, d.descricao as divida_descricao, d.id as divida_id
+     FROM parcelas_divida p JOIN dividas d ON d.id = p.divida_id WHERE p.id = $1`,
+    [req.params.id]
+  )
+  if (!parcela) return res.status(404).json({ error: 'Parcela não encontrada' })
+  if (parcela.status !== 'paga') return res.status(400).json({ error: 'Parcela não está paga' })
+
+  // Remove lançamento gerado pelo pagamento (se existir)
+  const descLancamento = `${parcela.divida_descricao} — parcela ${parcela.numero_parcela}`
+  await pool.query(
+    `DELETE FROM lancamentos WHERE descricao=$1 AND data=$2 AND tipo='saida'`,
+    [descLancamento, parcela.data_pagamento]
+  )
+
+  // Reverte parcela para pendente
+  await pool.query(
+    `UPDATE parcelas_divida SET status='pendente', data_pagamento=NULL WHERE id=$1`,
+    [parcela.id]
+  )
+
+  // Reativa dívida se estiver encerrada
+  await pool.query(`UPDATE dividas SET ativa=true WHERE id=$1`, [parcela.divida_id])
+
+  res.json({ ok: true })
+})
+
 module.exports = router

@@ -44,6 +44,11 @@ export async function registrarParcela(id) {
   return r.json()
 }
 
+export async function estornarParcela(parcelaId) {
+  const r = await fetchAuth(`/api/parcelas/${parcelaId}/estornar`, { method: 'PATCH' })
+  return r.json()
+}
+
 export async function deletarDivida(id) {
   await fetchAuth(`/api/dividas/${id}`, { method: 'DELETE' })
 }
