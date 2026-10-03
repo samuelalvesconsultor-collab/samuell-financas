@@ -173,28 +173,54 @@ router.put('/:id', async (req, res) => {
 
 // PATCH /api/contas/:id/pagar
 router.patch('/:id/pagar', async (req, res) => {
-  const { data_pagamento } = req.body
+  const { data_pagamento, mes_referencia } = req.body
   try {
     const dataPag = data_pagamento || new Date().toISOString().split('T')[0]
 
+    // Buscar a conta para verificar se é template recorrente
+    const { rows: [original] } = await pool.query(
+      `SELECT * FROM contas WHERE id=$1`, [req.params.id]
+    )
+    if (!original) return res.status(404).json({ error: 'Não encontrado' })
+
+    let targetId = original.id
+
+    // Se for template recorrente, criar/buscar a instância do mês para pagar
+    if (original.recorrente === true && original.conta_pai_id === null) {
+      const mesRef = mes_referencia || dataPag.slice(0, 7) + '-01'
+      const { rows: [existente] } = await pool.query(
+        `SELECT id FROM contas WHERE conta_pai_id=$1
+         AND DATE_TRUNC('month', mes_referencia) = DATE_TRUNC('month', $2::date)`,
+        [original.id, mesRef]
+      )
+      if (existente) {
+        targetId = existente.id
+      } else {
+        const { rows: [nova] } = await pool.query(
+          `INSERT INTO contas
+             (descricao, valor, dia_vencimento, mes_referencia, status, categoria_id,
+              cartao_vinculado, recorrente, conta_pai_id, forma_pagamento, tipo_pagamento)
+           VALUES ($1,$2,$3,$4,'pendente',$5,$6,false,$7,$8,'recorrente') RETURNING id`,
+          [original.descricao, original.valor, original.dia_vencimento, mesRef,
+           original.categoria_id, original.cartao_vinculado, original.id, original.forma_pagamento]
+        )
+        targetId = nova.id
+      }
+    }
+
     const { rows } = await pool.query(
       `UPDATE contas SET status='paga', data_pagamento=$1 WHERE id=$2 RETURNING *`,
-      [dataPag, req.params.id]
+      [dataPag, targetId]
     )
-    if (!rows.length) return res.status(404).json({ error: 'Não encontrado' })
-
     const conta = rows[0]
     let vinculadas_pagas = 0
 
-    // Se tem cartão vinculado, paga todas as contas do mesmo cartão no mesmo mês
     if (conta.cartao_vinculado) {
       const { rowCount } = await pool.query(
-        `UPDATE contas
-         SET status='paga', data_pagamento=$1
-         WHERE cartao_vinculado = $2
+        `UPDATE contas SET status='paga', data_pagamento=$1
+         WHERE cartao_vinculado=$2
            AND DATE_TRUNC('month', mes_referencia) = DATE_TRUNC('month', $3::date)
-           AND status != 'paga'
-           AND id != $4`,
+           AND status != 'paga' AND id != $4`,
         [dataPag, conta.cartao_vinculado, conta.mes_referencia, conta.id]
       )
       vinculadas_pagas = rowCount

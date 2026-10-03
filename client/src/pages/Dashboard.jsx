@@ -122,7 +122,9 @@ export default function Dashboard() {
 
   async function marcarContaPaga(conta) {
     setPagando(s => new Set([...s, conta.id]))
-    await pagarConta(conta.id, new Date().toISOString().split('T')[0])
+    const hoje = new Date().toISOString().split('T')[0]
+    const mesRef = (mesSelecionado || hoje.slice(0, 7)) + '-01'
+    await pagarConta(conta.id, hoje, mesRef)
     await carregar()
     setPagando(s => { const n = new Set(s); n.delete(conta.id); return n })
   }

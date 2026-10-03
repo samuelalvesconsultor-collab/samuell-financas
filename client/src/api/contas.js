@@ -23,11 +23,11 @@ export async function atualizarConta(id, data) {
   return r.json()
 }
 
-export async function pagarConta(id, data_pagamento) {
+export async function pagarConta(id, data_pagamento, mes_referencia) {
   const r = await fetchAuth(`/api/contas/${id}/pagar`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ data_pagamento }),
+    body: JSON.stringify({ data_pagamento, mes_referencia }),
   })
   return r.json()
 }
