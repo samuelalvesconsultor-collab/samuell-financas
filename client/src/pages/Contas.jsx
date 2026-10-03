@@ -526,7 +526,8 @@ function CartaoCard({ cartao, contas, mes, onEditar, onExcluir }) {
   }, [cartao.id, mes])
 
   const assinaturas = contas.filter(
-    c => c.conta_pai_id != null && c.cartao_vinculado === cartao.nome
+    c => c.conta_pai_id != null &&
+    c.cartao_vinculado?.trim().toLowerCase() === cartao.nome?.trim().toLowerCase()
   )
 
   const totalAssinaturas = assinaturas.reduce((s, c) => s + Number(c.valor), 0)

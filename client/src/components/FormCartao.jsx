@@ -17,7 +17,7 @@ export default function FormCartao({ inicial, onSalvar, onCancelar }) {
     if (!form.nome.trim()) return
     setLoading(true)
     try {
-      await onSalvar(form)
+      await onSalvar({ ...form, nome: form.nome.trim() })
     } finally {
       setLoading(false)
     }
