@@ -557,16 +557,15 @@ function ParcelaMesItem({ divida: d, onPagar }) {
               confirmando ? (
                 <div className="flex items-center gap-2">
                   <button onClick={pagar} disabled={pagando}
-                    className="text-[11px] text-teal-400 hover:text-teal-300 font-semibold transition-colors">
+                    className="text-[10px] transition-colors" style={{ color: '#14b8a6' }}>
                     {pagando ? '...' : 'Confirmar'}
                   </button>
                   <button onClick={() => setConfirmando(false)}
-                    className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors">Não</button>
+                    className="text-[10px] text-gray-600 hover:text-gray-400 transition-colors">Não</button>
                 </div>
               ) : (
                 <button onClick={() => setConfirmando(true)}
-                  className="text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors"
-                  style={{ background: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.25)', color: '#14b8a6' }}>
+                  className="text-[10px] transition-colors" style={{ color: '#14b8a6' }}>
                   Pagar
                 </button>
               )
