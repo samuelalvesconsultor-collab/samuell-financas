@@ -856,7 +856,7 @@ export default function Contas() {
 
       {/* Tab bar */}
       <div className="px-4 md:px-8 pt-2 pb-0">
-        <div className="flex gap-1 p-1 rounded-xl w-fit"
+        <div className="flex gap-1 p-1 rounded-xl w-full"
           style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)' }}>
           {[
             { id: 'contas',  label: 'Contas'   },
@@ -866,7 +866,7 @@ export default function Contas() {
             <button
               key={id}
               onClick={() => handleTabChange(id)}
-              className="px-5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200"
+              className="flex-1 py-1.5 rounded-lg text-sm font-medium transition-all duration-200"
               style={activeTab === id
                 ? { background: VERM, color: '#fff', boxShadow: `0 2px 12px ${VERM}60` }
                 : { color: 'var(--text-faint)' }}
