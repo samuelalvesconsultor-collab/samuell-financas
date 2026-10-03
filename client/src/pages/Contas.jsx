@@ -821,8 +821,15 @@ export default function Contas() {
 
   /* ── Computed ── */
 
-  const totalContas = lista.reduce((s, c) => s + Number(c.valor), 0)
-  const totalMensalDividas = dividas.filter(d => d.ativa).reduce((s, d) => s + Number(d.valor_parcela), 0)
+  // Filtra itens vinculados a cartão — eles aparecem apenas na aba Cartões
+  const listaSemCartao = lista.filter(c => !c.cartao_vinculado)
+  const gruposSemCartao = grupos
+    .map(g => ({ ...g, itens: g.itens.filter(c => !c.cartao_vinculado) }))
+    .filter(g => g.itens.length > 0)
+  const dividasSemCartao = dividas.filter(d => !d.cartao_id)
+
+  const totalContas = listaSemCartao.reduce((s, c) => s + Number(c.valor), 0)
+  const totalMensalDividas = dividasSemCartao.filter(d => d.ativa).reduce((s, d) => s + Number(d.valor_parcela), 0)
 
   /* ── Tabs ── */
 
@@ -873,7 +880,7 @@ export default function Contas() {
       {/* ── Tab: Contas ─────────────────────────────── */}
       {activeTab === 'contas' && (
         <>
-          {lista.length > 0 && (
+          {listaSemCartao.length > 0 && (
             <div className="px-4 md:px-8 py-3 md:py-4">
               <div className="flex flex-col md:flex-row gap-4 items-stretch">
                 <div className="rounded-xl px-4 md:px-5 py-4 relative overflow-hidden md:w-64 shrink-0"
@@ -891,7 +898,7 @@ export default function Contas() {
                     </div>
                     <div className="md:mt-4 text-right md:text-left">
                       <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: VERM }}>Registros</p>
-                      <p className="text-xl md:text-2xl font-bold" style={{ color: VERM }}>{lista.length}</p>
+                      <p className="text-xl md:text-2xl font-bold" style={{ color: VERM }}>{listaSemCartao.length}</p>
                     </div>
                   </div>
                 </div>
@@ -922,7 +929,7 @@ export default function Contas() {
             </div>
           )}
 
-          {!lista.length ? (
+          {!listaSemCartao.length ? (
             <div className="text-center py-16 text-gray-600 text-sm px-4">
               <p className="mb-2">Nenhuma conta registrada neste mês.</p>
               <button onClick={() => setModalConta('novo')} style={{ color: VERM }}
@@ -932,7 +939,7 @@ export default function Contas() {
             </div>
           ) : (
             <div className="px-4 md:px-8 pb-24 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {grupos
+              {gruposSemCartao
                 .filter(g => !gruposOcultos.has(g.nome ?? '__sem__'))
                 .map((grupo, idx) => (
                   <CategoriaCard
@@ -971,9 +978,9 @@ export default function Contas() {
           )}
 
           <div className="p-4 md:p-8 grid grid-cols-1 xl:grid-cols-2 gap-4">
-            {!dividas.length
+            {!dividasSemCartao.length
               ? <div className="text-center py-16 text-gray-600 text-sm">Nenhuma dívida encontrada.</div>
-              : dividas.map((d, idx) => (
+              : dividasSemCartao.map((d, idx) => (
                   <DividaCard
                     key={d.id}
                     divida={d}
