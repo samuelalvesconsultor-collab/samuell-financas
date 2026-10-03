@@ -20,6 +20,7 @@ app.use('/api/dashboard',     require('./src/routes/dashboard'))
 app.use('/api/parcelas',      require('./src/routes/parcelas'))
 app.use('/api/configuracoes', require('./src/routes/configuracoes'))
 app.use('/api/gastos',        require('./src/routes/gastos'))
+app.use('/api/cartoes',       require('./src/routes/cartoes'))
 
 // Dev local: escuta na porta; Vercel: exporta o app
 if (process.env.VERCEL) {

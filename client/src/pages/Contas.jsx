@@ -4,10 +4,12 @@ import { getContas, criarConta, atualizarConta, deletarConta, pagarConta } from 
 import { getDividas, criarDivida, atualizarDivida, deletarDivida, getParcelas, pagarParcela, registrarParcela } from '../api/dividas'
 import { getConfiguracoes, patchConfiguracao } from '../api/configuracoes'
 import { getDashboard } from '../api/dashboard'
+import { getCartoes, criarCartao, atualizarCartao, deletarCartao, getGastosCartao } from '../api/cartoes'
 import { CORES_STATUS_DEFAULT, CORES_FORMA_DEFAULT } from '../context/AppContext'
 import Modal from '../components/Modal'
 import FormConta from '../components/FormConta'
 import FormDivida from '../components/FormDivida'
+import FormCartao from '../components/FormCartao'
 import StatusBadge from '../components/StatusBadge'
 import CategoryBadge from '../components/CategoryBadge'
 import MonthPicker from '../components/MonthPicker'
@@ -498,9 +500,170 @@ function DividaCard({ divida, onEdit, onDelete, onRefresh, idx, dragOver, onDrag
   )
 }
 
+/* ── Tab: Cartões — CartaoCard ───────────────────────── */
+
+const CAT_CORES_GASTO = {
+  comida: '#f97316', mercado: '#22c55e', farmacia: '#60a5fa',
+  compras_necessarias: '#a78bfa', combustivel: '#facc15', gastos_extras: '#f87171',
+}
+const CAT_LABEL_GASTO = {
+  comida: 'Comida', mercado: 'Mercado', farmacia: 'Farmácia',
+  compras_necessarias: 'Compras necessárias', combustivel: 'Combustível', gastos_extras: 'Gastos extras',
+}
+const fmtDataGasto = s => {
+  const d = new Date(s)
+  d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
+  return d.toLocaleDateString('pt-BR')
+}
+
+function CartaoCard({ cartao, contas, mes, onEditar, onExcluir }) {
+  const [gastos, setGastos] = useState([])
+  const [expandido, setExpandido] = useState(true)
+  const cor = cartao.cor || '#6366f1'
+
+  useEffect(() => {
+    getGastosCartao(cartao.id, mes).then(setGastos).catch(() => {})
+  }, [cartao.id, mes])
+
+  const assinaturas = contas.filter(
+    c => c.conta_pai_id != null && c.cartao_vinculado === cartao.nome
+  )
+
+  const totalAssinaturas = assinaturas.reduce((s, c) => s + Number(c.valor), 0)
+  const totalGastos = gastos.reduce((s, g) => s + Number(g.valor), 0)
+  const total = totalAssinaturas + totalGastos
+
+  return (
+    <div className="rounded-2xl overflow-hidden"
+      style={{ background: 'var(--card)', border: `1px solid ${cor}33` }}>
+
+      {/* Cabeçalho do cartão */}
+      <div className="px-4 pt-4 pb-3 flex items-start justify-between"
+        style={{ borderBottom: `1px solid ${cor}22` }}>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: `${cor}22`, border: `1px solid ${cor}44` }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={cor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-bold" style={{ color: 'var(--text)' }}>{cartao.nome}</p>
+            {cartao.conta_pagamento && (
+              <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-faint)' }}>
+                Pago por: <span style={{ color: cor }}>{cartao.conta_pagamento}</span>
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-widest" style={{ color: cor }}>Total mês</p>
+            <p className="font-bold tabular-nums text-sm" style={{ color: cor }}>{BRL(total)}</p>
+          </div>
+          <button onClick={() => setExpandido(e => !e)}
+            className="text-gray-600 hover:text-gray-300 transition-colors text-xs">
+            {expandido ? '▲' : '▼'}
+          </button>
+        </div>
+      </div>
+
+      {expandido && (
+        <div className="pb-3">
+          {/* Assinaturas */}
+          {assinaturas.length > 0 && (
+            <div>
+              <div className="px-4 py-2 flex items-center justify-between"
+                style={{ borderBottom: '1px solid var(--divider)' }}>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: cor }}>
+                  Assinaturas
+                </p>
+                <span className="text-[10px] tabular-nums font-semibold" style={{ color: cor }}>
+                  {BRL(totalAssinaturas)}
+                </span>
+              </div>
+              <div className="divide-y" style={{ borderColor: 'var(--divider)' }}>
+                {assinaturas.map(c => (
+                  <div key={c.id} className="px-4 py-2.5 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{c.descricao}</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-faint)' }}>Recorrente · Dia {c.dia_vencimento}</p>
+                    </div>
+                    <p className="text-sm font-bold tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                      -{BRL(c.valor)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Gastos do mês */}
+          {gastos.length > 0 && (
+            <div>
+              <div className="px-4 py-2 flex items-center justify-between"
+                style={{ borderBottom: '1px solid var(--divider)', borderTop: assinaturas.length > 0 ? '1px solid var(--divider)' : 'none' }}>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: cor }}>
+                  Gastos do Mês
+                </p>
+                <span className="text-[10px] tabular-nums font-semibold" style={{ color: cor }}>
+                  {BRL(totalGastos)}
+                </span>
+              </div>
+              <div className="divide-y" style={{ borderColor: 'var(--divider)' }}>
+                {gastos.map(g => (
+                  <div key={g.id} className="px-4 py-2.5 flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{g.descricao}</p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+                          style={{
+                            background: `${CAT_CORES_GASTO[g.categoria] || '#6b7280'}22`,
+                            color: CAT_CORES_GASTO[g.categoria] || '#6b7280',
+                          }}>
+                          {CAT_LABEL_GASTO[g.categoria] || g.categoria}
+                        </span>
+                        <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>
+                          {fmtDataGasto(g.data)}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-sm font-bold tabular-nums shrink-0" style={{ color: cor }}>
+                      -{BRL(g.valor)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {assinaturas.length === 0 && gastos.length === 0 && (
+            <p className="px-4 py-4 text-xs text-center" style={{ color: 'var(--text-faint)' }}>
+              Nenhum gasto ou assinatura neste mês.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Rodapé com ações */}
+      <div className="px-4 py-2.5 flex items-center gap-3 justify-end"
+        style={{ borderTop: '1px solid var(--divider)', background: 'var(--card-dim)' }}>
+        <button onClick={() => onEditar(cartao)}
+          className="text-[11px] transition-colors" style={{ color: 'var(--text-faint)' }}>
+          Editar
+        </button>
+        <button onClick={() => onExcluir(cartao.id)}
+          className="text-[11px] hover:text-red-400 transition-colors" style={{ color: 'var(--text-faint)' }}>
+          Excluir
+        </button>
+      </div>
+    </div>
+  )
+}
+
 /* ── FAB speed dial ──────────────────────────────────── */
 
-function FABSpeedDial({ onNovaConta, onNovaDivida }) {
+function FABSpeedDial({ onNovaConta, onNovaDivida, onNovoCartao, activeTab }) {
   const [open, setOpen] = useState(false)
   const [scrollando, setScrollando] = useState(false)
 
@@ -535,26 +698,41 @@ function FABSpeedDial({ onNovaConta, onNovaDivida }) {
             pointerEvents: open ? 'auto' : 'none',
           }}
         >
-          <button
-            onClick={() => { onNovaDivida(); setOpen(false) }}
-            className="flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap active:scale-95 transition-transform"
-            style={{ background: '#7c3aed', color: '#fff', boxShadow: '0 4px 20px rgba(124,58,237,0.5)' }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
-            </svg>
-            Nova Dívida
-          </button>
-          <button
-            onClick={() => { onNovaConta(); setOpen(false) }}
-            className="flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap active:scale-95 transition-transform"
-            style={{ background: VERM, color: '#fff', boxShadow: `0 4px 20px ${VERM}70` }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Nova Conta
-          </button>
+          {activeTab === 'cartoes' ? (
+            <button
+              onClick={() => { onNovoCartao(); setOpen(false) }}
+              className="flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap active:scale-95 transition-transform"
+              style={{ background: '#6366f1', color: '#fff', boxShadow: '0 4px 20px rgba(99,102,241,0.5)' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+              </svg>
+              Novo Cartão
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => { onNovaDivida(); setOpen(false) }}
+                className="flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap active:scale-95 transition-transform"
+                style={{ background: '#7c3aed', color: '#fff', boxShadow: '0 4px 20px rgba(124,58,237,0.5)' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                </svg>
+                Nova Dívida
+              </button>
+              <button
+                onClick={() => { onNovaConta(); setOpen(false) }}
+                className="flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap active:scale-95 transition-transform"
+                style={{ background: VERM, color: '#fff', boxShadow: `0 4px 20px ${VERM}70` }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Nova Conta
+              </button>
+            </>
+          )}
         </div>
 
         {/* Main FAB */}
@@ -610,6 +788,10 @@ export default function Contas() {
   const [dragOverDividas, setDragOverDividas] = useState(null)
   const dragIdxDividas = useRef(null)
   const ordemSalvaDividas = useRef([])
+
+  // ── Cartões state ──
+  const [cartoes, setCartoes]           = useState([])
+  const [modalCartao, setModalCartao]   = useState(null)
 
   /* ── Contas effects/functions ── */
 
@@ -783,6 +965,27 @@ export default function Contas() {
     setDividas(l => l.filter(x => x.id !== id))
   }
 
+  /* ── Cartões effects/functions ── */
+
+  const carregarCartoes = () => getCartoes().then(setCartoes).catch(() => {})
+
+  useEffect(() => {
+    if (activeTab === 'cartoes') carregarCartoes()
+  }, [activeTab])
+
+  async function salvarCartao(dados) {
+    if (modalCartao === 'novo') await criarCartao(dados)
+    else await atualizarCartao(modalCartao.id, dados)
+    setModalCartao(null)
+    carregarCartoes()
+  }
+
+  async function excluirCartao(id) {
+    if (!confirm('Excluir cartão? Os gastos vinculados perdem o vínculo.')) return
+    await deletarCartao(id)
+    setCartoes(l => l.filter(c => c.id !== id))
+  }
+
   /* ── Computed ── */
 
   const totalContas = lista.reduce((s, c) => s + Number(c.valor), 0)
@@ -793,13 +996,14 @@ export default function Contas() {
   function handleTabChange(tab) {
     setActiveTab(tab)
     if (tab === 'dividas' && dividas.length === 0) carregarDividas()
+    if (tab === 'cartoes' && cartoes.length === 0) carregarCartoes()
   }
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--surface)' }}>
       {/* Header — MonthPicker só aparece na aba Contas */}
       <PageHeader titulo="Contas">
-        {activeTab === 'contas' && <MonthPicker />}
+        {(activeTab === 'contas' || activeTab === 'cartoes') && <MonthPicker />}
         {activeTab === 'dividas' && (
           <select value={filtroDividas} onChange={e => setFiltroDividas(e.target.value)}
             className="select-dark !w-auto text-xs md:text-sm">
@@ -815,8 +1019,9 @@ export default function Contas() {
         <div className="flex gap-1 p-1 rounded-xl w-fit"
           style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)' }}>
           {[
-            { id: 'contas',  label: 'Contas'  },
-            { id: 'dividas', label: 'Dívidas' },
+            { id: 'contas',  label: 'Contas'   },
+            { id: 'dividas', label: 'Dívidas'  },
+            { id: 'cartoes', label: 'Cartões'  },
           ].map(({ id, label }) => (
             <button
               key={id}
@@ -955,10 +1160,41 @@ export default function Contas() {
         </>
       )}
 
+      {/* ── Tab: Cartões ─────────────────────────────── */}
+      {activeTab === 'cartoes' && (
+        <>
+          {!cartoes.length ? (
+            <div className="text-center py-16 text-gray-600 text-sm px-4">
+              <p className="mb-2">Nenhum cartão cadastrado.</p>
+              <button onClick={() => setModalCartao('novo')}
+                className="hover:opacity-80 underline underline-offset-2"
+                style={{ color: '#6366f1' }}>
+                Adicionar cartão
+              </button>
+            </div>
+          ) : (
+            <div className="p-4 md:p-8 grid grid-cols-1 xl:grid-cols-2 gap-4">
+              {cartoes.map(cartao => (
+                <CartaoCard
+                  key={cartao.id}
+                  cartao={cartao}
+                  contas={lista}
+                  mes={mesSelecionado}
+                  onEditar={setModalCartao}
+                  onExcluir={excluirCartao}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
       {/* ── FAB Speed Dial ─────────────────────────────── */}
       <FABSpeedDial
+        activeTab={activeTab}
         onNovaConta={() => setModalConta('novo')}
         onNovaDivida={() => { setActiveTab('dividas'); setModalDivida('novo') }}
+        onNovoCartao={() => setModalCartao('novo')}
       />
 
       {/* ── Modais: Contas ─────────────────────────────── */}
@@ -1022,6 +1258,13 @@ export default function Contas() {
       {modalDivida && (
         <Modal titulo={modalDivida === 'novo' ? 'NOVA DÍVIDA' : 'EDITAR DÍVIDA'} onClose={() => setModalDivida(null)}>
           <FormDivida inicial={modalDivida !== 'novo' ? modalDivida : undefined} onSalvar={salvarDivida} onCancelar={() => setModalDivida(null)} />
+        </Modal>
+      )}
+
+      {/* ── Modais: Cartões ─────────────────────────────── */}
+      {modalCartao && (
+        <Modal titulo={modalCartao === 'novo' ? 'NOVO CARTÃO' : 'EDITAR CARTÃO'} onClose={() => setModalCartao(null)}>
+          <FormCartao inicial={modalCartao !== 'novo' ? modalCartao : undefined} onSalvar={salvarCartao} onCancelar={() => setModalCartao(null)} />
         </Modal>
       )}
     </div>

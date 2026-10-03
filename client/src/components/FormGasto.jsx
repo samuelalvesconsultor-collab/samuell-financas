@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getCartoes } from '../api/cartoes'
 
 const hoje = () => new Date().toISOString().split('T')[0]
 
@@ -25,17 +26,32 @@ export default function FormGasto({ onSalvar, onCancelar }) {
     data: hoje(),
     forma_pagamento: 'pix',
     categoria: 'comida',
+    cartao_id: '',
   })
+  const [cartoes, setCartoes] = useState([])
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    getCartoes().then(setCartoes).catch(() => {})
+  }, [])
+
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
+
+  function handleForma(e) {
+    const val = e.target.value
+    setForm(f => ({ ...f, forma_pagamento: val, cartao_id: val !== 'credito' ? '' : f.cartao_id }))
+  }
 
   async function submit(e) {
     e.preventDefault()
     if (!form.descricao.trim() || !form.valor) return
     setLoading(true)
     try {
-      await onSalvar({ ...form, valor: parseFloat(form.valor) })
+      await onSalvar({
+        ...form,
+        valor: parseFloat(form.valor),
+        cartao_id: form.cartao_id ? Number(form.cartao_id) : null,
+      })
     } finally {
       setLoading(false)
     }
@@ -83,10 +99,22 @@ export default function FormGasto({ onSalvar, onCancelar }) {
 
       <div>
         <label className="text-xs text-gray-400 mb-1 block">Forma de Pagamento</label>
-        <select className="select-dark w-full" value={form.forma_pagamento} onChange={set('forma_pagamento')}>
+        <select className="select-dark w-full" value={form.forma_pagamento} onChange={handleForma}>
           {FORMAS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
         </select>
       </div>
+
+      {form.forma_pagamento === 'credito' && cartoes.length > 0 && (
+        <div>
+          <label className="text-xs text-gray-400 mb-1 block">Cartão</label>
+          <select className="select-dark w-full" value={form.cartao_id} onChange={set('cartao_id')}>
+            <option value="">Sem cartão vinculado</option>
+            {cartoes.map(c => (
+              <option key={c.id} value={c.id}>{c.nome}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div>
         <label className="text-xs text-gray-400 mb-1 block">Categoria</label>

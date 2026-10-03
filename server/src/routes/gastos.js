@@ -15,11 +15,11 @@ router.get('/', async (req, res) => {
 })
 
 router.post('/', async (req, res) => {
-  const { descricao, valor, data, forma_pagamento, categoria } = req.body
+  const { descricao, valor, data, forma_pagamento, categoria, cartao_id } = req.body
   const { rows } = await pool.query(
-    `INSERT INTO gastos (descricao, valor, data, forma_pagamento, categoria)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [descricao, valor, data, forma_pagamento, categoria]
+    `INSERT INTO gastos (descricao, valor, data, forma_pagamento, categoria, cartao_id)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [descricao, valor, data, forma_pagamento, categoria, cartao_id || null]
   )
   res.json(rows[0])
 })
