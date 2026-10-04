@@ -17,20 +17,23 @@ router.get('/', async (req, res) => {
        WHERE tipo='entrada' AND DATE_TRUNC('month', data) = DATE_TRUNC('month', $1::date)`,
       [mesDate]
     ),
-    // Contas pagas no mês (exclui templates recorrentes)
+    // Contas pagas no mês — apenas as da lista de pagamentos pendentes (sem cartao_vinculado)
     pool.query(
       `SELECT COALESCE(SUM(valor), 0) as total FROM contas
        WHERE DATE_TRUNC('month', mes_referencia) = DATE_TRUNC('month', $1::date)
-       AND status = 'paga' AND recorrente = false`,
+       AND status = 'paga' AND recorrente = false
+       AND (cartao_vinculado IS NULL OR cartao_vinculado = '')`,
       [mesDate]
     ),
-    // Parcelas de dívidas pagas no mês
+    // Parcelas de dívidas pagas no mês — apenas as sem cartao_id (da lista de pagamentos pendentes)
     pool.query(
       `SELECT COALESCE(SUM(pd.valor), 0) as total
        FROM parcelas_divida pd
+       JOIN dividas d ON d.id = pd.divida_id
        WHERE pd.status = 'paga'
          AND pd.data_pagamento IS NOT NULL
-         AND DATE_TRUNC('month', pd.data_pagamento) = DATE_TRUNC('month', $1::date)`,
+         AND DATE_TRUNC('month', pd.data_pagamento) = DATE_TRUNC('month', $1::date)
+         AND d.cartao_id IS NULL`,
       [mesDate]
     ),
     // Contas pendentes/atrasadas no mês + dívidas ativas sem cartão (exclui templates)
