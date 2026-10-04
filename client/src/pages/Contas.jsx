@@ -178,6 +178,7 @@ function aplicarOrdemDividas(lista, ordemIds) {
 }
 
 const OCULTOS_KEY = 'contas_grupos_ocultos'
+const OCULTOS_PARCELAS_KEY = 'contas_parcelas_grupos_ocultos'
 
 /* ── Tab: Contas — CategoriaCard ─────────────────────── */
 
@@ -561,6 +562,77 @@ function ParcelaMesItem({ divida: d, onPagar }) {
   )
 }
 
+/* ── ParcelasGrupoCard ───────────────────────────────── */
+
+function ParcelasGrupoCard({ grupo, idx, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, onOcultar, onPagar }) {
+  const { nome, cor: corSalva, itens } = grupo
+  const total = itens.reduce((s, d) => s + Number(d.valor_parcela), 0)
+  const cor = corSalva || VERM
+  const isOver = dragOver === idx
+  const dragFromGrip = useRef(false)
+
+  return (
+    <div
+      draggable
+      onDragStart={e => {
+        if (!dragFromGrip.current) { e.preventDefault(); return }
+        dragFromGrip.current = false
+        onDragStart(idx)
+      }}
+      onDragOver={e => { e.preventDefault(); onDragOver(idx) }}
+      onDrop={() => onDrop(idx)}
+      onDragEnd={onDragEnd}
+      className="rounded-2xl flex flex-col overflow-hidden"
+      style={{
+        background: 'var(--card)',
+        border: `1px solid ${isOver ? cor : 'var(--card-border)'}`,
+        boxShadow: isOver ? `0 0 0 2px ${cor}33` : 'none',
+        transition: 'border-color 0.15s, box-shadow 0.15s',
+      }}
+    >
+      <div className="px-4 pt-4 pb-3 flex items-start justify-between">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: cor }}>
+            {nome || 'Sem categoria'}
+          </p>
+          <div className="h-0.5 w-5 rounded-full" style={{ background: cor }} />
+        </div>
+        <div className="flex items-center gap-2" style={{ marginTop: 2 }}>
+          <button
+            onClick={() => onOcultar(nome)}
+            title="Ocultar card"
+            className="text-gray-700 hover:text-gray-400 transition-colors"
+            onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}
+          >
+            <EyeOffIcon />
+          </button>
+          <span
+            style={{ color: 'var(--text-faint)', cursor: 'grab' }}
+            onMouseDown={() => { dragFromGrip.current = true }}
+            onMouseLeave={() => { dragFromGrip.current = false }}
+          >
+            <GripIcon />
+          </span>
+        </div>
+      </div>
+      <div className="flex-1 divide-y" style={{ borderColor: 'var(--divider)' }}>
+        {itens.map(d => (
+          <ParcelaMesItem key={d.id} divida={d} onPagar={onPagar} />
+        ))}
+      </div>
+      <div className="px-4 py-3 flex items-center justify-between"
+        style={{ borderTop: '1px solid var(--card-border)', background: 'var(--card-dim)' }}>
+        <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: 'var(--text-faint)' }}>
+          {itens.length} {itens.length === 1 ? 'item' : 'itens'}
+        </span>
+        <span className="font-display font-bold text-sm tabular-nums" style={{ color: cor }}>
+          {BRL(total)}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 /* ── FAB speed dial ──────────────────────────────────── */
 
 function FABSpeedDial({ onNovaConta, onNovaDivida, onNovoCartao, activeTab }) {
@@ -681,6 +753,13 @@ export default function Contas() {
   const dragIdxContas = useRef(null)
   const ordemSalvaContas = useRef([])
 
+  // ── Parcelas (dívidas na aba Contas) state ──
+  const [gruposParcelasOcultos, setGruposParcelasOcultos] = useState(new Set())
+  const [gruposParcelasOrdenados, setGruposParcelasOrdenados] = useState([])
+  const [dragOverParcelas, setDragOverParcelas] = useState(null)
+  const dragIdxParcelas = useRef(null)
+  const ordemSalvaParcelas = useRef([])
+
   // ── Dívidas state ──
   const [dividas, setDividas]           = useState([])
   const [filtroDividas, setFiltroDividas] = useState('true')
@@ -735,6 +814,43 @@ export default function Contas() {
     ordemSalvaContas.current = ordem
     patchConfiguracao('ordem_grupos_contas', JSON.stringify(ordem))
   }
+
+  function ocultarGrupoParcelas(nome) {
+    const chave = nome ?? '__sem__'
+    setGruposParcelasOcultos(prev => {
+      const next = new Set(prev)
+      next.add(chave)
+      patchConfiguracao(OCULTOS_PARCELAS_KEY, JSON.stringify([...next]))
+      return next
+    })
+  }
+
+  function mostrarTodasParcelas() {
+    setGruposParcelasOcultos(new Set())
+    patchConfiguracao(OCULTOS_PARCELAS_KEY, JSON.stringify([]))
+  }
+
+  function salvarOrdemParcelas(novosGrupos) {
+    const ordem = novosGrupos.map(g => g.nome ?? null)
+    ordemSalvaParcelas.current = ordem
+    patchConfiguracao('ordem_grupos_parcelas', JSON.stringify(ordem))
+  }
+
+  function onDragStartParcelas(i) { dragIdxParcelas.current = i }
+  function onDragOverParcelas(i)  { setDragOverParcelas(i) }
+  function onDropParcelas(i) {
+    if (dragIdxParcelas.current === null || dragIdxParcelas.current === i) { dragIdxParcelas.current = null; setDragOverParcelas(null); return }
+    setGruposParcelasOrdenados(g => {
+      const next = [...g]
+      const [moved] = next.splice(dragIdxParcelas.current, 1)
+      next.splice(i, 0, moved)
+      salvarOrdemParcelas(next)
+      return next
+    })
+    dragIdxParcelas.current = null
+    setDragOverParcelas(null)
+  }
+  function onDragEndParcelas() { dragIdxParcelas.current = null; setDragOverParcelas(null) }
 
   function onDragStartContas(i) { dragIdxContas.current = i }
   function onDragOverContas(i)  { setDragOverContas(i) }
@@ -824,6 +940,12 @@ export default function Contas() {
     const ordem = cfg[chaveConfigDividas] ?? []
     ordemSalvaDividas.current = ordem
     setDividas(aplicarOrdemDividas(data, ordem))
+
+    const ordemParcelas = cfg['ordem_grupos_parcelas'] ?? []
+    ordemSalvaParcelas.current = ordemParcelas
+    setGruposParcelasOcultos(new Set(Array.isArray(cfg[OCULTOS_PARCELAS_KEY]) ? cfg[OCULTOS_PARCELAS_KEY] : []))
+    const ativas = data.filter(d => d.ativa && !d.cartao_id)
+    setGruposParcelasOrdenados(aplicarOrdemContas(agruparPorCategoria(ativas), ordemParcelas))
   }
 
   useEffect(() => {
@@ -1032,37 +1154,38 @@ export default function Contas() {
           )}
 
           {/* ── Parcelas do mês ── */}
-          {dividasSemCartao.filter(d => d.ativa).length > 0 && (
+          {gruposParcelasOrdenados.length > 0 && (
             <div className="px-4 md:px-8 pb-6 space-y-3">
-              {Object.entries(
-                dividasSemCartao.filter(d => d.ativa).reduce((acc, d) => {
-                  const cat = d.categoria_nome || 'Sem categoria'
-                  if (!acc[cat]) acc[cat] = []
-                  acc[cat].push(d)
-                  return acc
-                }, {})
-              ).map(([cat, itens]) => (
-                <div key={cat} className="rounded-xl overflow-hidden"
-                  style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
-                  <div className="px-4 pt-3 pb-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: VERM }}>{cat}</p>
-                  </div>
-                  <div className="divide-y" style={{ borderColor: 'var(--divider)' }}>
-                    {itens.map(d => (
-                      <ParcelaMesItem key={d.id} divida={d} onPagar={() => carregarDividas()} />
-                    ))}
-                  </div>
-                  <div className="px-4 py-3 flex items-center justify-between"
-                    style={{ borderTop: '1px solid var(--card-border)', background: 'var(--card-dim)' }}>
-                    <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: 'var(--text-faint)' }}>
-                      {itens.length} {itens.length === 1 ? 'item' : 'itens'}
-                    </span>
-                    <span className="font-display font-bold text-sm tabular-nums" style={{ color: VERM }}>
-                      {BRL(itens.reduce((s, d) => s + Number(d.valor_parcela), 0))}
-                    </span>
-                  </div>
+              {gruposParcelasOcultos.size > 0 && (
+                <div className="flex items-center justify-between gap-3 px-4 py-2 rounded-xl"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)' }}>
+                  <span className="text-[11px]" style={{ color: 'var(--text-faint)' }}>
+                    {gruposParcelasOcultos.size} {gruposParcelasOcultos.size === 1 ? 'grupo oculto' : 'grupos ocultos'}
+                  </span>
+                  <button onClick={mostrarTodasParcelas}
+                    className="text-[11px] font-medium transition-colors"
+                    style={{ color: '#14b8a6' }}>
+                    Mostrar todos
+                  </button>
                 </div>
-              ))}
+              )}
+              {gruposParcelasOrdenados
+                .filter(g => !gruposParcelasOcultos.has(g.nome ?? '__sem__'))
+                .map((grupo, idx) => (
+                  <ParcelasGrupoCard
+                    key={grupo.nome || '__sem__'}
+                    grupo={grupo}
+                    idx={idx}
+                    dragOver={dragOverParcelas}
+                    onDragStart={onDragStartParcelas}
+                    onDragOver={onDragOverParcelas}
+                    onDrop={onDropParcelas}
+                    onDragEnd={onDragEndParcelas}
+                    onOcultar={ocultarGrupoParcelas}
+                    onPagar={carregarDividas}
+                  />
+                ))
+              }
             </div>
           )}
         </>
