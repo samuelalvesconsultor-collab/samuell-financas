@@ -960,12 +960,12 @@ export default function Contas() {
                       <div className="h-0.5 w-5 rounded-full mb-2" style={{ background: VERM }} />
                       <p className="font-display text-lg md:text-2xl font-bold tabular-nums"
                         style={{ color: VERM, textShadow: '0 0 16px rgba(255,23,68,0.4)' }}>
-                        {BRL(totalContas)}
+                        {BRL(totalContas + totalMensalDividas)}
                       </p>
                     </div>
                     <div className="md:mt-4 text-right md:text-left">
                       <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: VERM }}>Registros</p>
-                      <p className="text-xl md:text-2xl font-bold" style={{ color: VERM }}>{listaSemCartao.length}</p>
+                      <p className="text-xl md:text-2xl font-bold" style={{ color: VERM }}>{listaSemCartao.length + dividasSemCartao.filter(d => d.ativa).length}</p>
                     </div>
                   </div>
                 </div>
@@ -1054,6 +1054,15 @@ export default function Contas() {
                     {itens.map(d => (
                       <ParcelaMesItem key={d.id} divida={d} onPagar={() => carregarDividas()} />
                     ))}
+                  </div>
+                  <div className="px-4 py-3 flex items-center justify-between"
+                    style={{ borderTop: '1px solid var(--card-border)', background: 'var(--card-dim)' }}>
+                    <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: 'var(--text-faint)' }}>
+                      {itens.length} {itens.length === 1 ? 'item' : 'itens'}
+                    </span>
+                    <span className="font-display font-bold text-sm tabular-nums" style={{ color: VERM }}>
+                      {BRL(itens.reduce((s, d) => s + Number(d.valor_parcela), 0))}/mês
+                    </span>
                   </div>
                 </div>
               ))}
