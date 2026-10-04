@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { getDashboard } from '../api/dashboard'
 import { pagarConta } from '../api/contas'
@@ -86,6 +86,7 @@ const CARD_MAP = {
 export default function Dashboard() {
   const { mesSelecionado, config } = useApp()
   const navigate = useNavigate()
+  const location = useLocation()
   const [dados, setDados] = useState(null)
   const [dividas, setDividas] = useState([])
   const [pagando, setPagando] = useState(new Set())
@@ -93,7 +94,7 @@ export default function Dashboard() {
 
   const carregar = () => getDashboard(mesSelecionado).then(setDados)
   const carregarDividas = () => getDividas(true).then(list => setDividas(list.filter(d => !d.cartao_id)))
-  useEffect(() => { carregar(); carregarDividas() }, [mesSelecionado])
+  useEffect(() => { carregar(); carregarDividas() }, [mesSelecionado, location.key])
 
   async function pagarParcelaDivida(d) {
     setPagandoParcela(s => new Set([...s, d.id]))
