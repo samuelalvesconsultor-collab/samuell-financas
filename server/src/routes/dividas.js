@@ -45,10 +45,15 @@ router.post('/', async (req, res) => {
 
   // 2. Gerar parcelas mensais a partir de data_inicio
   const dataBase = new Date(data_inicio + 'T12:00:00Z')
+  const diaBase = dataBase.getUTCDate()
+  const anoBase = dataBase.getUTCFullYear()
+  const mesBase = dataBase.getUTCMonth()
   for (let i = 0; i < num_parcelas; i++) {
-    const d = new Date(dataBase)
-    d.setUTCMonth(d.getUTCMonth() + i)
-    const venc = d.toISOString().split('T')[0]
+    const mesAlvo = mesBase + i
+    const ano = anoBase + Math.floor(mesAlvo / 12)
+    const mes = mesAlvo % 12
+    const ultimoDia = new Date(Date.UTC(ano, mes + 1, 0)).getUTCDate()
+    const venc = new Date(Date.UTC(ano, mes, Math.min(diaBase, ultimoDia))).toISOString().split('T')[0]
     await pool.query(
       `INSERT INTO parcelas_divida (divida_id, numero_parcela, valor, data_vencimento) VALUES ($1,$2,$3,$4)`,
       [divida.id, i + 1, valor_parcela, venc]

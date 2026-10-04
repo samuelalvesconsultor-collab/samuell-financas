@@ -96,10 +96,14 @@ router.post('/', async (req, res) => {
       `, [descricao, valor, dia_vencimento, mesRef, categoria_id || null, forma_pagamento || null, numParc])
 
       let primeira
+      const mesRefBase = new Date(mesRef + 'T12:00:00Z')
+      const anoMesBase = mesRefBase.getUTCFullYear()
+      const mesMesBase = mesRefBase.getUTCMonth()
       for (let i = 1; i <= numParc; i++) {
-        const d = new Date(mesRef + 'T12:00:00Z')
-        d.setUTCMonth(d.getUTCMonth() + (i - 1))
-        const mesRefParc = d.toISOString().split('T')[0]
+        const mesAlvo = mesMesBase + (i - 1)
+        const ano = anoMesBase + Math.floor(mesAlvo / 12)
+        const mes = mesAlvo % 12
+        const mesRefParc = new Date(Date.UTC(ano, mes, 1)).toISOString().split('T')[0]
         const { rows: [inst] } = await pool.query(`
           INSERT INTO contas (descricao, valor, dia_vencimento, mes_referencia, status, categoria_id,
                               recorrente, conta_pai_id, forma_pagamento, num_parcelas, tipo_pagamento, parcela_atual)
@@ -134,12 +138,19 @@ router.post('/', async (req, res) => {
         VALUES ($1, 'parcelamento', $2, $3, $4, $5, $6, $7, 'cartao_credito') RETURNING id
       `, [descDiv, valorTotal, numParc, valorUnit, dataInicio, dataTerminoStr, categoria_id || null])
 
+      const dInicioBase = new Date(dataInicio + 'T12:00:00Z')
+      const diaInicio = dInicioBase.getUTCDate()
+      const anoInicio = dInicioBase.getUTCFullYear()
+      const mesInicio = dInicioBase.getUTCMonth()
       for (let i = 0; i < numParc; i++) {
-        const d = new Date(dataInicio + 'T12:00:00Z')
-        d.setUTCMonth(d.getUTCMonth() + i)
+        const mesAlvo = mesInicio + i
+        const ano = anoInicio + Math.floor(mesAlvo / 12)
+        const mes = mesAlvo % 12
+        const ultimoDia = new Date(Date.UTC(ano, mes + 1, 0)).getUTCDate()
+        const venc = new Date(Date.UTC(ano, mes, Math.min(diaInicio, ultimoDia))).toISOString().split('T')[0]
         await pool.query(
           `INSERT INTO parcelas_divida (divida_id, numero_parcela, valor, data_vencimento) VALUES ($1,$2,$3,$4)`,
-          [divida.id, i + 1, valorUnit, d.toISOString().split('T')[0]]
+          [divida.id, i + 1, valorUnit, venc]
         )
       }
     }
