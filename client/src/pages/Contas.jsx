@@ -1061,7 +1061,7 @@ export default function Contas() {
                       {itens.length} {itens.length === 1 ? 'item' : 'itens'}
                     </span>
                     <span className="font-display font-bold text-sm tabular-nums" style={{ color: VERM }}>
-                      {BRL(itens.reduce((s, d) => s + Number(d.valor_parcela), 0))}/mês
+                      {BRL(itens.reduce((s, d) => s + Number(d.valor_parcela), 0))}
                     </span>
                   </div>
                 </div>
