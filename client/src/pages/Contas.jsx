@@ -540,23 +540,26 @@ function ParcelaMesItem({ divida: d, onPagar }) {
               <span className="text-[10px] text-gray-600">· vence {fmtDate(d.proxima_vencimento)}</span>
             )}
           </div>
-          <div className="mt-1.5 h-1 rounded-full w-32" style={{ background: 'var(--progress-track)' }}>
-            <div className="h-1 rounded-full bg-red-600 transition-all" style={{ width: `${progresso}%` }} />
-          </div>
         </div>
         <div className="text-right shrink-0">
           <p className="font-bold tabular-nums text-sm"
-            style={jaPagouEsseMes ? { color: '#22c55e' } : { color: 'var(--text)' }}>
-            {BRL(d.valor_parcela)}
+            style={jaPagouEsseMes
+              ? { color: '#22c55e', textShadow: '0 0 10px rgba(34,197,94,0.35)' }
+              : { color: VERM,      textShadow: '0 0 10px rgba(255,23,68,0.3)' }}>
+            -{BRL(d.valor_parcela)}
           </p>
-          <div className="mt-1.5">
+          <div className="flex items-center gap-1.5 mt-1 justify-end">
             {jaPagouEsseMes ? (
-              <span className="text-[10px] text-green-500 font-semibold">Pago</span>
+              <StatusBadge status="paga" />
             ) : !temPendente ? (
               <span className="text-[10px] text-gray-600">Quitado</span>
             ) : null}
           </div>
         </div>
+      </div>
+      <div className="mt-1.5 h-1 rounded-full w-32" style={{ background: 'var(--progress-track)' }}>
+        <div className={`h-1 rounded-full transition-all ${jaPagouEsseMes ? 'bg-green-500' : 'bg-red-600'}`}
+          style={{ width: `${progresso}%` }} />
       </div>
     </div>
   )
