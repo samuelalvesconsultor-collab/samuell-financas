@@ -196,38 +196,55 @@ export default function Dashboard() {
                     <h2 className="text-[10px] font-bold tracking-widest uppercase" style={{ color: 'rgba(234,179,8,0.8)' }}>Pagamentos Pendentes</h2>
                   </div>
                   <div className="divide-y" style={{ borderColor: 'var(--divider)' }}>
-                    {itensContas.map(({ c }) => (
-                      <div key={`c-${c.id}`} className="flex items-center justify-between px-4 py-3">
-                        <p className="text-sm text-white truncate flex-1 pr-3">{c.descricao}</p>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-sm tabular-nums font-semibold" style={{ color: 'rgba(255,23,68,0.8)' }}>-{BRL(c.valor)}</span>
-                          <button onClick={() => marcarContaPaga(c)} disabled={pagando.has(c.id)}
-                            className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
-                            style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
-                            {pagando.has(c.id) ? '...' : 'Pagar'}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                    {itensDividas.map(({ d, temPendente }) => (
-                      <div key={`d-${d.id}`} className="flex items-center justify-between px-4 py-3">
-                        <p className="text-sm text-white truncate flex-1 pr-3">{d.descricao}</p>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-sm tabular-nums font-semibold" style={{ color: 'rgba(255,23,68,0.8)' }}>
-                            -{BRL(d.valor_parcela)}
-                          </span>
-                          {temPendente ? (
-                            <button onClick={() => pagarParcelaDivida(d)} disabled={pagandoParcela.has(d.id)}
+                    {itensContas.map(({ c }) => {
+                      const mesRef = c.mes_referencia ? new Date(c.mes_referencia) : null
+                      const vencStr = mesRef && c.dia_vencimento
+                        ? `${String(c.dia_vencimento).padStart(2,'0')}/${String(mesRef.getUTCMonth()+1).padStart(2,'0')}`
+                        : null
+                      return (
+                        <div key={`c-${c.id}`} className="flex items-center justify-between px-4 py-3">
+                          <div className="flex-1 min-w-0 pr-3">
+                            <p className="text-sm text-white truncate">{c.descricao}</p>
+                            {vencStr && <p className="text-[10px] text-gray-600 mt-0.5">Vence {vencStr}</p>}
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="text-sm tabular-nums font-semibold" style={{ color: 'rgba(255,23,68,0.8)' }}>-{BRL(c.valor)}</span>
+                            <button onClick={() => marcarContaPaga(c)} disabled={pagando.has(c.id)}
                               className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
                               style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
-                              {pagandoParcela.has(d.id) ? '...' : 'Pagar'}
+                              {pagando.has(c.id) ? '...' : 'Pagar'}
                             </button>
-                          ) : (
-                            <span className="text-[10px] text-gray-600">Quitado</span>
-                          )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
+                    {itensDividas.map(({ d, temPendente }) => {
+                      const vencDiv = d.proxima_vencimento
+                        ? (() => { const [,m,dd] = d.proxima_vencimento.slice(0,10).split('-'); return `${dd}/${m}` })()
+                        : null
+                      return (
+                        <div key={`d-${d.id}`} className="flex items-center justify-between px-4 py-3">
+                          <div className="flex-1 min-w-0 pr-3">
+                            <p className="text-sm text-white truncate">{d.descricao}</p>
+                            {vencDiv && <p className="text-[10px] text-gray-600 mt-0.5">Vence {vencDiv}</p>}
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="text-sm tabular-nums font-semibold" style={{ color: 'rgba(255,23,68,0.8)' }}>
+                              -{BRL(d.valor_parcela)}
+                            </span>
+                            {temPendente ? (
+                              <button onClick={() => pagarParcelaDivida(d)} disabled={pagandoParcela.has(d.id)}
+                                className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
+                                style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
+                                {pagandoParcela.has(d.id) ? '...' : 'Pagar'}
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-gray-600">Quitado</span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )
