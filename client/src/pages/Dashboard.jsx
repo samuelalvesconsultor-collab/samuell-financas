@@ -179,12 +179,12 @@ export default function Dashboard() {
                 const termino = d.data_termino ? d.data_termino.slice(0, 7) : null
                 if (inicio && mesFiltro < inicio) return false
                 if (termino && mesFiltro > termino) return false
-                return true
-              }).map(d => {
                 const mesProxVenc = d.proxima_vencimento ? d.proxima_vencimento.slice(0, 7) : null
                 const jaPagou = (d.parcelas_pagas || 0) > 0 && (mesProxVenc === null || mesProxVenc > mesFiltro)
+                return !jaPagou
+              }).map(d => {
                 const temPendente = (d.parcelas_pagas || 0) < d.num_parcelas
-                return { tipo: 'divida', d, jaPagou, temPendente }
+                return { tipo: 'divida', d, temPendente }
               })
               const itensContas = dados.contas_proximas.filter(c => !c.cartao_vinculado).map(c => ({ tipo: 'conta', c }))
               const todos = [...itensContas, ...itensDividas]
@@ -209,16 +209,14 @@ export default function Dashboard() {
                         </div>
                       </div>
                     ))}
-                    {itensDividas.map(({ d, jaPagou, temPendente }) => (
+                    {itensDividas.map(({ d, temPendente }) => (
                       <div key={`d-${d.id}`} className="flex items-center justify-between px-4 py-3">
                         <p className="text-sm text-white truncate flex-1 pr-3">{d.descricao}</p>
                         <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-sm tabular-nums font-semibold" style={{ color: jaPagou ? '#22c55e' : 'rgba(255,23,68,0.8)' }}>
+                          <span className="text-sm tabular-nums font-semibold" style={{ color: 'rgba(255,23,68,0.8)' }}>
                             -{BRL(d.valor_parcela)}
                           </span>
-                          {jaPagou ? (
-                            <span className="text-[10px] font-semibold text-green-500">Pago</span>
-                          ) : temPendente ? (
+                          {temPendente ? (
                             <button onClick={() => pagarParcelaDivida(d)} disabled={pagandoParcela.has(d.id)}
                               className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
                               style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
