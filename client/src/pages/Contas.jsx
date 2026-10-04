@@ -274,12 +274,6 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, onOcultar, idx, dr
                 -{BRL(c.valor)}
               </p>
               <div className="flex items-center gap-2 justify-end mt-1">
-                {c.status !== 'paga' && (
-                  <button onClick={() => onPagar(c)}
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
-                    style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}
-                    onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Pagar</button>
-                )}
                 <button onClick={() => onEditar(c)}
                   className="text-[13px] transition-colors hover:text-white" style={{ color: 'var(--text-faint)' }}
                   onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} title="Editar">✏️</button>
@@ -557,27 +551,9 @@ function ParcelaMesItem({ divida: d, onPagar }) {
           <div className="mt-1.5">
             {jaPagouEsseMes ? (
               <span className="text-[10px] text-green-500 font-semibold">Pago</span>
-            ) : temPendente ? (
-              confirmando ? (
-                <div className="flex items-center gap-2">
-                  <button onClick={pagar} disabled={pagando}
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
-                    style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
-                    {pagando ? '...' : 'Confirmar'}
-                  </button>
-                  <button onClick={() => setConfirmando(false)}
-                    className="text-[10px] text-gray-600 hover:text-gray-400 transition-colors">Não</button>
-                </div>
-              ) : (
-                <button onClick={() => setConfirmando(true)}
-                  className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
-                  style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
-                  Pagar
-                </button>
-              )
-            ) : (
+            ) : !temPendente ? (
               <span className="text-[10px] text-gray-600">Quitado</span>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
