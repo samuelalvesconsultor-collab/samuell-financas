@@ -186,8 +186,23 @@ export default function Dashboard() {
                 const temPendente = (d.parcelas_pagas || 0) < d.num_parcelas
                 return { tipo: 'divida', d, temPendente }
               })
-              const itensContas = dados.contas_proximas.filter(c => !c.cartao_vinculado).map(c => ({ tipo: 'conta', c }))
-              const todos = [...itensContas, ...itensDividas]
+              const itensContas = dados.contas_proximas.filter(c => !c.cartao_vinculado).map(c => {
+                const mesRef = c.mes_referencia ? new Date(c.mes_referencia) : new Date()
+                const ano = mesRef.getUTCFullYear()
+                const mes = String(mesRef.getUTCMonth() + 1).padStart(2, '0')
+                const dia = String(c.dia_vencimento || 1).padStart(2, '0')
+                const sortKey = `${ano}-${mes}-${dia}`
+                const vencStr = `${dia}/${mes}`
+                return { tipo: 'conta', c, sortKey, vencStr }
+              })
+              const itensDiv = itensDividas.map(({ d, temPendente }) => {
+                const sortKey = d.proxima_vencimento?.slice(0, 10) || '9999-12-31'
+                const vencDiv = d.proxima_vencimento
+                  ? (() => { const [,m,dd] = d.proxima_vencimento.slice(0,10).split('-'); return `${dd}/${m}` })()
+                  : null
+                return { tipo: 'divida', d, temPendente, sortKey, vencDiv }
+              })
+              const todos = [...itensContas, ...itensDiv].sort((a, b) => a.sortKey.localeCompare(b.sortKey))
               if (!todos.length) return null
               return (
                 <div className="rounded-xl overflow-hidden"
@@ -196,55 +211,43 @@ export default function Dashboard() {
                     <h2 className="text-[10px] font-bold tracking-widest uppercase" style={{ color: 'rgba(234,179,8,0.8)' }}>Pagamentos Pendentes</h2>
                   </div>
                   <div className="divide-y" style={{ borderColor: 'var(--divider)' }}>
-                    {itensContas.map(({ c }) => {
-                      const mesRef = c.mes_referencia ? new Date(c.mes_referencia) : null
-                      const vencStr = mesRef && c.dia_vencimento
-                        ? `${String(c.dia_vencimento).padStart(2,'0')}/${String(mesRef.getUTCMonth()+1).padStart(2,'0')}`
-                        : null
-                      return (
-                        <div key={`c-${c.id}`} className="flex items-center justify-between px-4 py-3">
-                          <div className="flex-1 min-w-0 pr-3">
-                            <p className="text-sm text-white truncate">{c.descricao}</p>
-                            {vencStr && <p className="text-[10px] text-gray-600 mt-0.5">Vence {vencStr}</p>}
-                          </div>
-                          <div className="flex items-center gap-3 shrink-0">
-                            <span className="text-sm tabular-nums font-semibold" style={{ color: 'rgba(255,23,68,0.8)' }}>-{BRL(c.valor)}</span>
-                            <button onClick={() => marcarContaPaga(c)} disabled={pagando.has(c.id)}
+                    {todos.map(item => item.tipo === 'conta' ? (
+                      <div key={`c-${item.c.id}`} className="flex items-center justify-between px-4 py-3">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <p className="text-sm text-white truncate">{item.c.descricao}</p>
+                          <p className="text-[10px] text-gray-600 mt-0.5">Vence {item.vencStr}</p>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-sm tabular-nums font-semibold" style={{ color: 'rgba(255,23,68,0.8)' }}>-{BRL(item.c.valor)}</span>
+                          <button onClick={() => marcarContaPaga(item.c)} disabled={pagando.has(item.c.id)}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
+                            style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
+                            {pagando.has(item.c.id) ? '...' : 'Pagar'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div key={`d-${item.d.id}`} className="flex items-center justify-between px-4 py-3">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <p className="text-sm text-white truncate">{item.d.descricao}</p>
+                          {item.vencDiv && <p className="text-[10px] text-gray-600 mt-0.5">Vence {item.vencDiv}</p>}
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-sm tabular-nums font-semibold" style={{ color: 'rgba(255,23,68,0.8)' }}>
+                            -{BRL(item.d.valor_parcela)}
+                          </span>
+                          {item.temPendente ? (
+                            <button onClick={() => pagarParcelaDivida(item.d)} disabled={pagandoParcela.has(item.d.id)}
                               className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
                               style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
-                              {pagando.has(c.id) ? '...' : 'Pagar'}
+                              {pagandoParcela.has(item.d.id) ? '...' : 'Pagar'}
                             </button>
-                          </div>
+                          ) : (
+                            <span className="text-[10px] text-gray-600">Quitado</span>
+                          )}
                         </div>
-                      )
-                    })}
-                    {itensDividas.map(({ d, temPendente }) => {
-                      const vencDiv = d.proxima_vencimento
-                        ? (() => { const [,m,dd] = d.proxima_vencimento.slice(0,10).split('-'); return `${dd}/${m}` })()
-                        : null
-                      return (
-                        <div key={`d-${d.id}`} className="flex items-center justify-between px-4 py-3">
-                          <div className="flex-1 min-w-0 pr-3">
-                            <p className="text-sm text-white truncate">{d.descricao}</p>
-                            {vencDiv && <p className="text-[10px] text-gray-600 mt-0.5">Vence {vencDiv}</p>}
-                          </div>
-                          <div className="flex items-center gap-3 shrink-0">
-                            <span className="text-sm tabular-nums font-semibold" style={{ color: 'rgba(255,23,68,0.8)' }}>
-                              -{BRL(d.valor_parcela)}
-                            </span>
-                            {temPendente ? (
-                              <button onClick={() => pagarParcelaDivida(d)} disabled={pagandoParcela.has(d.id)}
-                                className="text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors"
-                                style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
-                                {pagandoParcela.has(d.id) ? '...' : 'Pagar'}
-                              </button>
-                            ) : (
-                              <span className="text-[10px] text-gray-600">Quitado</span>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )
