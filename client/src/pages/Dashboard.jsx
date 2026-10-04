@@ -172,9 +172,10 @@ export default function Dashboard() {
             {(() => {
               const hoje = new Date()
               const mesHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`
+              const mesFiltro = mesSelecionado || mesHoje
               const itensDividas = dividas.filter(d => d.ativa).map(d => {
                 const mesProxVenc = d.proxima_vencimento ? d.proxima_vencimento.slice(0, 7) : null
-                const jaPagou = (d.parcelas_pagas || 0) > 0 && (mesProxVenc === null || mesProxVenc > mesHoje)
+                const jaPagou = (d.parcelas_pagas || 0) > 0 && (mesProxVenc === null || mesProxVenc > mesFiltro)
                 const temPendente = (d.parcelas_pagas || 0) < d.num_parcelas
                 return { tipo: 'divida', d, jaPagou, temPendente }
               })

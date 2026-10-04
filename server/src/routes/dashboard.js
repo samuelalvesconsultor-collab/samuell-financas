@@ -25,18 +25,17 @@ router.get('/', async (req, res) => {
        AND (cartao_vinculado IS NULL OR cartao_vinculado = '')`,
       [mesDate]
     ),
-    // Parcelas de dívidas pagas no mês — apenas as sem cartao_id (da lista de pagamentos pendentes)
+    // Parcelas de dívidas pagas no mês — usa data_vencimento para atribuir ao mês correto
     pool.query(
       `SELECT COALESCE(SUM(pd.valor), 0) as total
        FROM parcelas_divida pd
        JOIN dividas d ON d.id = pd.divida_id
        WHERE pd.status = 'paga'
-         AND pd.data_pagamento IS NOT NULL
-         AND DATE_TRUNC('month', pd.data_pagamento) = DATE_TRUNC('month', $1::date)
+         AND DATE_TRUNC('month', pd.data_vencimento) = DATE_TRUNC('month', $1::date)
          AND d.cartao_id IS NULL`,
       [mesDate]
     ),
-    // Contas pendentes/atrasadas no mês + dívidas ativas sem cartão (exclui templates)
+    // Contas pendentes/atrasadas no mês + dívidas com parcela pendente no mês
     pool.query(
       `SELECT
          COALESCE((
@@ -45,8 +44,14 @@ router.get('/', async (req, res) => {
            AND status IN ('pendente', 'atrasada') AND recorrente = false
          ), 0) +
          COALESCE((
-           SELECT SUM(valor_parcela) FROM dividas
-           WHERE ativa = true AND cartao_id IS NULL
+           SELECT SUM(d.valor_parcela) FROM dividas d
+           WHERE d.ativa = true AND d.cartao_id IS NULL
+             AND EXISTS (
+               SELECT 1 FROM parcelas_divida pd
+               WHERE pd.divida_id = d.id
+                 AND DATE_TRUNC('month', pd.data_vencimento) = DATE_TRUNC('month', $1::date)
+                 AND pd.status = 'pendente'
+             )
          ), 0) as total`,
       [mesDate]
     ),
@@ -101,17 +106,21 @@ router.get('/', async (req, res) => {
        GROUP BY m.mes ORDER BY m.mes`,
       [mesDate]
     ),
-    // Histórico mensal de saídas — contas pagas + parcelas de dívidas pagas
+    // Histórico mensal de saídas — contas pagas + parcelas de dívidas pagas (por data_vencimento)
     pool.query(
       `SELECT TO_CHAR(m.mes, 'YYYY-MM') as mes,
               COALESCE((
                 SELECT SUM(c.valor) FROM contas c
                 WHERE DATE_TRUNC('month', c.mes_referencia) = m.mes AND c.status = 'paga'
+                  AND c.recorrente = false
+                  AND (c.cartao_vinculado IS NULL OR c.cartao_vinculado = '')
               ), 0) +
               COALESCE((
                 SELECT SUM(pd.valor) FROM parcelas_divida pd
-                WHERE pd.status = 'paga' AND pd.data_pagamento IS NOT NULL
-                  AND DATE_TRUNC('month', pd.data_pagamento) = m.mes
+                JOIN dividas d ON d.id = pd.divida_id
+                WHERE pd.status = 'paga'
+                  AND DATE_TRUNC('month', pd.data_vencimento) = m.mes
+                  AND d.cartao_id IS NULL
               ), 0) as total
        FROM generate_series(
          DATE_TRUNC('year', $1::date),
