@@ -1044,11 +1044,8 @@ export default function Contas() {
               ).map(([cat, itens]) => (
                 <div key={cat} className="rounded-xl overflow-hidden"
                   style={{ background: 'var(--card)', border: '1px solid var(--card-border)' }}>
-                  <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+                  <div className="px-4 pt-3 pb-1">
                     <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: VERM }}>{cat}</p>
-                    <p className="text-[10px] text-gray-500 tabular-nums">
-                      {BRL(itens.reduce((s, d) => s + Number(d.valor_parcela), 0))}
-                    </p>
                   </div>
                   <div className="divide-y" style={{ borderColor: 'var(--divider)' }}>
                     {itens.map(d => (
