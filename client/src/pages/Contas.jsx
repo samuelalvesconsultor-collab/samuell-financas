@@ -1047,7 +1047,7 @@ export default function Contas() {
                   <div className="px-4 pt-3 pb-1 flex items-center justify-between">
                     <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: VERM }}>{cat}</p>
                     <p className="text-[10px] text-gray-500 tabular-nums">
-                      {BRL(itens.reduce((s, d) => s + Number(d.valor_parcela), 0))}/mês
+                      {BRL(itens.reduce((s, d) => s + Number(d.valor_parcela), 0))}
                     </p>
                   </div>
                   <div className="divide-y" style={{ borderColor: 'var(--divider)' }}>
