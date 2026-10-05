@@ -34,6 +34,7 @@ export default function Gastos() {
   const { mesSelecionado } = useApp()
   const [lista, setLista] = useState([])
   const [modal, setModal] = useState(false)
+  const [busca, setBusca] = useState('')
 
   const carregar = () => getGastos(mesSelecionado).then(setLista)
 
@@ -57,7 +58,12 @@ export default function Gastos() {
     setLista(l => l.filter(x => x.id !== id))
   }
 
-  const porCategoria = lista.reduce((acc, g) => {
+  const termo = busca.trim().toLowerCase()
+  const listaFiltrada = termo
+    ? lista.filter(g => g.descricao?.toLowerCase().includes(termo))
+    : lista
+
+  const porCategoria = listaFiltrada.reduce((acc, g) => {
     const cat = g.categoria || 'gastos_extras'
     if (!acc[cat]) acc[cat] = []
     acc[cat].push(g)
@@ -65,6 +71,7 @@ export default function Gastos() {
   }, {})
 
   const total = lista.reduce((s, g) => s + Number(g.valor), 0)
+  const totalFiltrado = listaFiltrada.reduce((s, g) => s + Number(g.valor), 0)
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--surface)' }}>
@@ -96,6 +103,44 @@ export default function Gastos() {
         </div>
       )}
 
+      {/* Barra de busca */}
+      {lista.length > 0 && (
+        <div className="px-4 md:px-8 pb-2">
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+              width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ color: 'var(--text-faint)' }}>
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Buscar por nome..."
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+              className="input-dark w-full pl-9 pr-9"
+            />
+            {busca && (
+              <button
+                onClick={() => setBusca('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors text-lg leading-none">
+                ×
+              </button>
+            )}
+          </div>
+          {termo && (
+            <div className="flex items-center justify-between mt-2 px-1">
+              <span className="text-[11px]" style={{ color: 'var(--text-faint)' }}>
+                {listaFiltrada.length} {listaFiltrada.length === 1 ? 'resultado' : 'resultados'}
+              </span>
+              <span className="text-[11px] font-bold tabular-nums" style={{ color: LARANJA }}>
+                {BRL(totalFiltrado)}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {!lista.length ? (
         <div className="text-center py-16 text-gray-600 text-sm px-4">
           <p className="mb-2">Nenhum gasto registrado neste mês.</p>
@@ -103,6 +148,10 @@ export default function Gastos() {
             className="hover:opacity-80 underline underline-offset-2">
             Registrar agora
           </button>
+        </div>
+      ) : !listaFiltrada.length ? (
+        <div className="text-center py-12 text-gray-600 text-sm px-4">
+          Nenhum gasto encontrado para <span className="text-white">"{busca}"</span>
         </div>
       ) : (
         <div className="px-4 md:px-8 pb-24 space-y-3">
