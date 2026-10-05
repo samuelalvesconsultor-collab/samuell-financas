@@ -26,7 +26,6 @@ const GripIcon = () => (
   </svg>
 )
 
-const TIPO_DIVIDA_LABEL = { cartao: 'Cartão', financiamento: 'Financiamento', emprestimo: 'Empréstimo', parcelamento: 'Parcelamento' }
 
 function Parcelas({ divida, onPagar }) {
   const [parcelas, setParcelas] = useState(null)
@@ -180,7 +179,6 @@ export default function DividaCard({
               </span>
             </div>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] text-gray-600 uppercase tracking-wide">{TIPO_DIVIDA_LABEL[divida.tipo]}</span>
               {divida.categoria_nome && <CategoryBadge nome={divida.categoria_nome} />}
             </div>
           </div>
