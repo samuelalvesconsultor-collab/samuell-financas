@@ -257,7 +257,7 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, onOcultar, idx, dr
                     {c.parcela_atual}/{c.num_parcelas}
                   </span>
                 )}
-                <StatusBadge status={c.status} />
+                {c.status !== 'pendente' && <StatusBadge status={c.status} />}
               </div>
               {(() => {
                 const bv = badgesVisiveis || {}
