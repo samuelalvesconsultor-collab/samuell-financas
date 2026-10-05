@@ -1,6 +1,11 @@
 import { useState } from 'react'
 
-const CORES = ['#6366f1', '#ec4899', '#f97316', '#14b8a6', '#22c55e', '#eab308', '#8b5cf6', '#06b6d4']
+const CORES = [
+  '#6366f1', '#8b5cf6', '#a78bfa',
+  '#ec4899', '#f43f5e', '#fb923c',
+  '#f97316', '#eab308', '#22c55e',
+  '#14b8a6', '#06b6d4', '#3b82f6',
+]
 
 export default function FormCartao({ inicial, onSalvar, onCancelar }) {
   const [form, setForm] = useState({
@@ -49,7 +54,7 @@ export default function FormCartao({ inicial, onSalvar, onCancelar }) {
 
       <div>
         <label className="text-xs text-gray-400 mb-2 block">Cor</label>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap mb-3">
           {CORES.map(c => (
             <button
               key={c}
@@ -63,6 +68,20 @@ export default function FormCartao({ inicial, onSalvar, onCancelar }) {
               }}
             />
           ))}
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="text-[10px] text-gray-500 uppercase tracking-wide">Personalizada</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={form.cor}
+              onChange={e => setForm(f => ({ ...f, cor: e.target.value }))}
+              className="w-7 h-7 rounded-full cursor-pointer border-0 p-0"
+              style={{ background: 'transparent' }}
+            />
+            <span className="text-[10px] font-mono" style={{ color: 'var(--text-faint)' }}>{form.cor}</span>
+          </div>
+          <div className="w-4 h-4 rounded-full shrink-0" style={{ background: form.cor }} />
         </div>
       </div>
 

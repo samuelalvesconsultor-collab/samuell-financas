@@ -316,7 +316,7 @@ const fmtDataGasto = s => {
   return d.toLocaleDateString('pt-BR')
 }
 
-function CartaoCard({ cartao, contas, mes, onEditar, onExcluir, onEditarDivida, onExcluirDivida }) {
+function CartaoCard({ cartao, contas, mes, onEditar, onExcluir, onEditarDivida, onExcluirDivida, onEditarAssinatura, onExcluirAssinatura }) {
   const [gastos, setGastos] = useState([])
   const [dividasCartao, setDividasCartao] = useState([])
   const [expandido, setExpandido] = useState(true)
@@ -390,14 +390,26 @@ function CartaoCard({ cartao, contas, mes, onEditar, onExcluir, onEditarDivida, 
               </div>
               <div className="divide-y" style={{ borderColor: 'var(--divider)' }}>
                 {assinaturas.map(c => (
-                  <div key={c.id} className="px-4 py-2.5 flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{c.descricao}</p>
+                  <div key={c.id} className="px-4 py-2.5 flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{c.descricao}</p>
                       <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-faint)' }}>Recorrente · Dia {c.dia_vencimento}</p>
                     </div>
-                    <p className="text-sm font-bold tabular-nums" style={{ color: 'var(--text-muted)' }}>
-                      -{BRL(c.valor)}
-                    </p>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <p className="text-sm font-bold tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                        -{BRL(c.valor)}
+                      </p>
+                      <button
+                        onClick={() => onEditarAssinatura?.(c)}
+                        className="text-[13px] transition-colors hover:text-white"
+                        style={{ color: 'var(--text-faint)' }}
+                        title="Editar">✏️</button>
+                      <button
+                        onClick={() => onExcluirAssinatura?.(c)}
+                        className="text-[13px] hover:text-red-400 transition-colors"
+                        style={{ color: 'var(--text-faint)' }}
+                        title="Excluir">×</button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1257,6 +1269,8 @@ export default function Contas() {
                     refresh()
                     carregarDividas()
                   }}
+                  onEditarAssinatura={c => setModalConta(c)}
+                  onExcluirAssinatura={excluirConta}
                 />
               ))}
             </div>
