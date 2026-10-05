@@ -519,71 +519,42 @@ function CartaoCard({ cartao, contas, mes, onEditar, onExcluir, onEditarDivida, 
 
 /* ── ParcelaMesItem — dívida como item pagável na aba Contas ── */
 
-function ParcelaMesItem({ divida: d, onPagar }) {
-  const [confirmando, setConfirmando] = useState(false)
-  const [pagando, setPagando] = useState(false)
-
+function ParcelaMesItem({ divida: d }) {
   const hoje = new Date()
   const mesHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`
   const mesProxVenc = d.proxima_vencimento ? d.proxima_vencimento.slice(0, 7) : null
   const jaPagouEsseMes = d.parcelas_pagas > 0 && (mesProxVenc === null || mesProxVenc > mesHoje)
   const temPendente = (d.parcelas_pagas || 0) < d.num_parcelas
-  const progresso = d.num_parcelas > 0 ? ((d.parcelas_pagas || 0) / d.num_parcelas) * 100 : 0
-
-  const fmtDate = s => {
-    if (!s) return '—'
-    const dt = new Date(s)
-    dt.setMinutes(dt.getMinutes() + dt.getTimezoneOffset())
-    return dt.toLocaleDateString('pt-BR')
-  }
-
-  async function pagar(e) {
-    e.stopPropagation()
-    setPagando(true)
-    try {
-      await registrarParcela(d.id)
-      setConfirmando(false)
-      onPagar()
-    } finally {
-      setPagando(false)
-    }
-  }
+  const diaVenc = d.proxima_vencimento
+    ? new Date(d.proxima_vencimento + 'T12:00:00Z').getUTCDate()
+    : null
 
   return (
-    <div className="px-4 py-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <span className="text-sm font-semibold leading-snug truncate block" style={{ color: 'var(--text)' }}>
-            {d.descricao}
-          </span>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-[10px] text-gray-600">
-              {d.parcelas_pagas || 0}/{d.num_parcelas} parcelas
+    <div className="px-4 py-3 flex items-center gap-3">
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-semibold leading-snug truncate block" style={{ color: 'var(--text)' }}>
+          {d.descricao}
+        </span>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          {diaVenc && (
+            <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
+              Dia {diaVenc}
             </span>
-            {d.proxima_vencimento && (
-              <span className="text-[10px] text-gray-600">· vence {fmtDate(d.proxima_vencimento)}</span>
-            )}
-          </div>
-        </div>
-        <div className="text-right shrink-0">
-          <p className="font-bold tabular-nums text-sm"
-            style={jaPagouEsseMes
-              ? { color: '#22c55e', textShadow: '0 0 10px rgba(34,197,94,0.35)' }
-              : { color: VERM,      textShadow: '0 0 10px rgba(255,23,68,0.3)' }}>
-            -{BRL(d.valor_parcela)}
-          </p>
-          <div className="flex items-center gap-1.5 mt-1 justify-end">
-            {jaPagouEsseMes ? (
-              <StatusBadge status="paga" />
-            ) : !temPendente ? (
-              <span className="text-[10px] text-gray-600">Quitado</span>
-            ) : null}
-          </div>
+          )}
+          {jaPagouEsseMes
+            ? <StatusBadge status="paga" />
+            : !temPendente
+              ? <span className="text-[10px] text-gray-600">Quitado</span>
+              : null}
         </div>
       </div>
-      <div className="mt-1.5 h-1 rounded-full w-32" style={{ background: 'var(--progress-track)' }}>
-        <div className={`h-1 rounded-full transition-all ${jaPagouEsseMes ? 'bg-green-500' : 'bg-red-600'}`}
-          style={{ width: `${progresso}%` }} />
+      <div className="text-right shrink-0">
+        <p className="font-bold tabular-nums text-sm"
+          style={jaPagouEsseMes
+            ? { color: '#22c55e', textShadow: '0 0 10px rgba(34,197,94,0.35)' }
+            : { color: VERM,      textShadow: '0 0 10px rgba(255,23,68,0.3)' }}>
+          -{BRL(d.valor_parcela)}
+        </p>
       </div>
     </div>
   )
