@@ -145,6 +145,7 @@ export default function Nav() {
           backdropFilter: 'blur(18px)',
           WebkitBackdropFilter: 'blur(18px)',
           borderTop: '1px solid var(--card-border)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
         {linksMobile.map(({ to, label, Icon, end }) => (
@@ -153,7 +154,7 @@ export default function Nav() {
             to={to}
             end={end}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] transition-colors ${
+              `flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] transition-colors active:opacity-60 ${
                 isActive ? 'text-red-500' : 'text-gray-600'
               }`
             }

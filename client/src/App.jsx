@@ -32,7 +32,7 @@ function AppContent() {
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--surface)' }}>
       <Nav />
-      <main className="flex-1 md:ml-14 pb-16 md:pb-0 min-w-0">
+      <main className="flex-1 md:ml-14 content-below-nav min-w-0">
         <Routes>
           <Route path="/"              element={<Dashboard />} />
           <Route path="/lancamentos"   element={<Lancamentos />} />

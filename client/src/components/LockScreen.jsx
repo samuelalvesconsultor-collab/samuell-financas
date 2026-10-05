@@ -117,7 +117,11 @@ export default function LockScreen({ onUnlock }) {
   return (
     <div
       className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
-      style={{ background: 'var(--surface, #0d0d0d)' }}
+      style={{
+        background: 'var(--surface, #0d0d0d)',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
     >
       {/* Logo */}
       <div className="w-16 h-16 rounded-2xl bg-red-600 flex items-center justify-center text-white font-black text-xl mb-4 select-none"

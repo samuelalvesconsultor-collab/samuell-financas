@@ -19,13 +19,14 @@ export default function Modal({ titulo, onClose, children }) {
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
-        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-5 overflow-y-auto overscroll-contain"
+        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-5 overflow-y-auto overscroll-contain scroll-contained"
         style={{
           background: 'var(--modal-surface)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
           border: '1px solid var(--card-border)',
           maxHeight: '85svh',
+          paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
         }}
       >
         <div className="flex justify-between items-center mb-5">

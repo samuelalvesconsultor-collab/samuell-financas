@@ -111,6 +111,44 @@ html.light .td                { color: #0f172a; }
   }
 }
 
+/* ── Safe area (iPhone notch / Dynamic Island / home indicator) ── */
+:root {
+  --nav-height:  56px;
+  --fab-bottom:  calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 0.75rem);
+}
+@media (min-width: 768px) {
+  :root { --fab-bottom: 1.5rem; }
+}
+
+/* Padding do conteúdo principal no mobile para não ficar atrás da bottom nav + home indicator */
+.content-below-nav {
+  padding-bottom: var(--nav-height);
+  padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .content-below-nav { padding-bottom: 0; }
+}
+
+/* Overscroll contido (sem bounce propagando para o body no iOS) */
+.scroll-contained {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+
+}
+
+/* ── Melhorias de toque no mobile ── */
+* {
+  /* Remove o highlight azul/cinza ao tocar em elementos no mobile */
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 768px) {
+  button, a {
+    /* Remove o delay de 300ms de toque no iOS */
+    touch-action: manipulation;
+  }
+}
+
 @layer base {
   html {
     overflow-x: hidden;
