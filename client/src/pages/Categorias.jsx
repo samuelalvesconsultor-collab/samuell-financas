@@ -5,6 +5,13 @@ import Modal from '../components/Modal'
 import FormCategoria from '../components/FormCategoria'
 import PageHeader from '../components/PageHeader'
 
+const EditIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+)
+
 const TIPO_LABEL = { entrada: 'Entrada', saida: 'Saída', ambos: 'Ambos' }
 const TIPO_COR   = { entrada: 'text-teal-400 border-teal-800/40 bg-teal-900/20', saida: 'text-red-400 border-red-800/40 bg-red-900/20', ambos: 'text-gray-400 border-gray-700 bg-gray-800/30' }
 
@@ -71,7 +78,7 @@ export default function Categorias() {
                       {c.padrao && <span className="text-[10px] text-yellow-400 border border-yellow-800/40 bg-yellow-900/20 px-2 py-0.5 rounded-full">Padrão</span>}
                     </td>
                     <td className="td text-right whitespace-nowrap">
-                      <button onClick={() => setModal(c)} className="text-gray-600 hover:text-gray-300 text-xs mr-4 transition-colors">Editar</button>
+                      <button onClick={() => setModal(c)} className="text-gray-600 hover:text-gray-300 transition-colors mr-4" title="Editar"><EditIcon /></button>
                       <button onClick={() => arquivarCategoria(c.id).then(carregar)} className="text-gray-600 hover:text-yellow-400 text-xs transition-colors">Arquivar</button>
                     </td>
                   </tr>
@@ -105,7 +112,7 @@ export default function Categorias() {
                   </div>
                 </div>
                 <div className="flex gap-3 shrink-0">
-                  <button onClick={() => setModal(c)} className="text-gray-600 hover:text-gray-300 text-xs transition-colors">Editar</button>
+                  <button onClick={() => setModal(c)} className="text-gray-600 hover:text-gray-300 transition-colors" title="Editar"><EditIcon /></button>
                   <button onClick={() => arquivarCategoria(c.id).then(carregar)} className="text-gray-600 hover:text-yellow-400 text-xs transition-colors">Arquivar</button>
                 </div>
               </div>

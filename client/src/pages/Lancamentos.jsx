@@ -6,6 +6,13 @@ import { getDashboard } from '../api/dashboard'
 import Modal from '../components/Modal'
 import FormEntrada from '../components/FormEntrada'
 import MonthPicker from '../components/MonthPicker'
+
+const EditIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+)
 import PageHeader from '../components/PageHeader'
 import GraficoMensal from '../components/GraficoMensal'
 import FABButton from '../components/FABButton'
@@ -111,9 +118,11 @@ function CategoriaCard({ grupo, onEditar, onExcluir, idx, dragOver, onDragStart,
                 +{BRL(l.valor)}
               </p>
               <div className="flex items-center gap-2 justify-end mt-1">
-                <button onClick={() => onEditar(l)} className="text-[10px] transition-colors"
+                <button onClick={() => onEditar(l)} className="transition-colors hover:text-white"
                   style={{ color: 'var(--text-faint)' }}
-                  onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Editar</button>
+                  onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} title="Editar">
+                  <EditIcon />
+                </button>
                 <button onClick={() => onExcluir(l.id)} className="text-[10px] hover:text-red-400 transition-colors"
                   style={{ color: 'var(--text-faint)' }}
                   onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>Excluir</button>

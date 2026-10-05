@@ -86,6 +86,13 @@ const EyeOffIcon = () => (
   </svg>
 )
 
+const EditIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+)
+
 /* ── Modais de exclusão ─────────────────────────────── */
 
 function ModalExcluirParcelado({ conta, onSoParcela, onTodos, onCancelar }) {
@@ -276,8 +283,10 @@ function CategoriaCard({ grupo, onPagar, onEditar, onExcluir, onOcultar, idx, dr
               </p>
               <div className="flex items-center gap-2 justify-end mt-1">
                 <button onClick={() => onEditar(c)}
-                  className="text-[13px] transition-colors hover:text-white" style={{ color: 'var(--text-faint)' }}
-                  onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} title="Editar">✏️</button>
+                  className="transition-colors hover:text-white" style={{ color: 'var(--text-faint)' }}
+                  onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} title="Editar">
+                  <EditIcon />
+                </button>
                 <button onClick={() => onExcluir(c)}
                   className="text-[13px] hover:text-red-400 transition-colors" style={{ color: 'var(--text-faint)' }}
                   onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} title="Excluir">×</button>
@@ -401,9 +410,11 @@ function CartaoCard({ cartao, contas, mes, onEditar, onExcluir, onEditarDivida, 
                       </p>
                       <button
                         onClick={() => onEditarAssinatura?.(c)}
-                        className="text-[13px] transition-colors hover:text-white"
+                        className="transition-colors hover:text-white"
                         style={{ color: 'var(--text-faint)' }}
-                        title="Editar">✏️</button>
+                        title="Editar">
+                        <EditIcon />
+                      </button>
                       <button
                         onClick={() => onExcluirAssinatura?.(c)}
                         className="text-[13px] hover:text-red-400 transition-colors"
@@ -493,8 +504,9 @@ function CartaoCard({ cartao, contas, mes, onEditar, onExcluir, onEditarDivida, 
       <div className="px-4 py-2.5 flex items-center gap-3 justify-end"
         style={{ borderTop: '1px solid var(--divider)', background: 'var(--card-dim)' }}>
         <button onClick={() => onEditar(cartao)}
-          className="text-[11px] transition-colors" style={{ color: 'var(--text-faint)' }}>
-          Editar
+          className="transition-colors hover:text-white" style={{ color: 'var(--text-faint)' }}
+          title="Editar">
+          <EditIcon />
         </button>
         <button onClick={() => onExcluir(cartao.id)}
           className="text-[11px] hover:text-red-400 transition-colors" style={{ color: 'var(--text-faint)' }}>
