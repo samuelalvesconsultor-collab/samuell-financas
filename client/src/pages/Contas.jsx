@@ -526,7 +526,7 @@ function ParcelaMesItem({ divida: d }) {
   const jaPagouEsseMes = d.parcelas_pagas > 0 && (mesProxVenc === null || mesProxVenc > mesHoje)
   const temPendente = (d.parcelas_pagas || 0) < d.num_parcelas
   const diaVenc = d.proxima_vencimento
-    ? new Date(d.proxima_vencimento + 'T12:00:00Z').getUTCDate()
+    ? parseInt(d.proxima_vencimento.slice(8, 10), 10)
     : null
 
   return (
